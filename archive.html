@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Container Tracker — Archive</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --navy:#1F3864; --navy-dark:#0F1B35; --navy-light:#2A4A7F;
+      --blue-soft:#4A7FBF; --blue-pale:#93C5FD;
+      --bg:#F8FAFC; --surface:#ffffff;
+      --border:#E5E7EB; --border-soft:#F3F4F6;
+      --text-1:#111827; --text-2:#6B7280; --text-3:#9CA3AF;
+      --green-bg:#D1FAE5; --green-text:#065F46; --green:#059669;
+      --red-bg:#FEE2E2; --red-text:#991B1B; --red:#DC2626;
+      --blue-bg:#DBEAFE; --blue-text:#1D4ED8;
+    }
+    html,body{height:100%;font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text-1)}
+
+    /* NAV */
+    .nav{background:var(--navy);height:56px;display:flex;align-items:center;padding:0 28px;position:sticky;top:0;z-index:100}
+    .nav-logo{display:flex;align-items:center;gap:10px;text-decoration:none}
+    .nav-logo-icon{width:30px;height:30px;background:rgba(255,255,255,0.15);border-radius:8px;display:flex;align-items:center;justify-content:center}
+    .nav-logo-name{color:#fff;font-size:15px;font-weight:600;letter-spacing:-0.2px}
+    .nav-links{display:flex;gap:2px;margin-left:32px}
+    .nav-link{color:rgba(255,255,255,0.55);font-size:13px;padding:6px 14px;border-radius:7px;text-decoration:none;font-weight:500;transition:background 0.15s,color 0.15s}
+    .nav-link:hover{background:rgba(255,255,255,0.1);color:#fff}
+    .nav-link.active{background:rgba(255,255,255,0.15);color:#fff}
+    .nav-right{margin-left:auto;display:flex;align-items:center;gap:16px}
+    .nav-date{font-size:12px;color:rgba(255,255,255,0.45)}
+    .nav-avatar{width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,0.2);border:1.5px solid rgba(255,255,255,0.3);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:#fff;cursor:pointer;position:relative}
+    .nav-avatar-menu{display:none;position:absolute;top:calc(100% + 8px);right:0;background:var(--surface);border:0.5px solid var(--border);border-radius:10px;padding:6px;min-width:160px;box-shadow:0 8px 24px rgba(0,0,0,0.12)}
+    .nav-avatar:hover .nav-avatar-menu{display:block}
+    .nav-avatar-menu a{display:block;padding:8px 12px;font-size:13px;color:var(--text-1);text-decoration:none;border-radius:6px}
+    .nav-avatar-menu a:hover{background:var(--bg)}
+    .nav-avatar-menu a.danger{color:var(--red)}
+
+    /* MAIN */
+    .main{max-width:1280px;margin:0 auto;padding:28px 28px 60px}
+
+    /* PAGE HEADER */
+    .page-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:12px}
+    .page-title{font-size:20px;font-weight:600;letter-spacing:-0.3px}
+    .page-sub{font-size:13px;color:var(--text-2);margin-top:2px}
+
+    /* STATS */
+    .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:28px}
+    .stat{background:var(--surface);border:0.5px solid var(--border);border-radius:12px;padding:18px 20px;border-left:3px solid var(--accent)}
+    .stat-label{font-size:11px;font-weight:500;color:var(--text-2);letter-spacing:0.03em;margin-bottom:8px}
+    .stat-value{font-size:28px;font-weight:600;line-height:1;letter-spacing:-0.5px}
+    .stat-sub{font-size:11px;color:var(--text-3);margin-top:5px}
+
+    /* TOOLBAR */
+    .toolbar{display:flex;gap:8px;align-items:center;margin-bottom:20px;flex-wrap:wrap}
+    .search-wrap{flex:1;min-width:200px;height:38px;background:var(--surface);border:0.5px solid var(--border);border-radius:9px;display:flex;align-items:center;gap:8px;padding:0 12px;transition:border-color 0.15s}
+    .search-wrap:focus-within{border-color:var(--blue-soft)}
+    .search-wrap input{flex:1;border:none;outline:none;background:transparent;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--text-1)}
+    .search-wrap input::placeholder{color:var(--text-3)}
+    .btn{height:38px;padding:0 16px;border:0.5px solid var(--border);border-radius:9px;background:var(--surface);font-size:13px;font-family:'DM Sans',sans-serif;color:var(--text-1);cursor:pointer;display:flex;align-items:center;gap:6px;white-space:nowrap;transition:background 0.15s;font-weight:500}
+    .btn:hover{background:var(--bg);border-color:#D1D5DB}
+    .btn-primary{background:var(--navy);color:#fff;border-color:var(--navy)}
+    .btn-primary:hover{background:var(--navy-light);border-color:var(--navy-light)}
+    .btn-danger{color:var(--red-text);border-color:#FECACA}
+    .btn-danger:hover{background:var(--red-bg)}
+    .btn-icon{width:16px;height:16px}
+
+    /* DATE RANGE PICKER */
+    .date-range{display:flex;align-items:center;gap:6px}
+    .date-input{height:38px;padding:0 12px;border:0.5px solid var(--border);border-radius:9px;background:var(--surface);font-size:13px;font-family:'DM Sans',sans-serif;color:var(--text-1);outline:none;transition:border-color 0.15s}
+    .date-input:focus{border-color:var(--blue-soft)}
+    .date-sep{font-size:12px;color:var(--text-3)}
+
+    /* FILTER */
+    .filter-wrap{position:relative}
+    .filter-dropdown{display:none;position:absolute;top:calc(100% + 6px);left:0;background:var(--surface);border:0.5px solid var(--border);border-radius:10px;padding:8px;min-width:200px;z-index:50;box-shadow:0 8px 24px rgba(0,0,0,0.1)}
+    .filter-wrap.open .filter-dropdown{display:block}
+    .filter-section-label{font-size:10px;font-weight:600;color:var(--text-3);letter-spacing:0.06em;padding:4px 8px 6px;text-transform:uppercase}
+    .filter-option{display:flex;align-items:center;gap:8px;padding:7px 8px;border-radius:6px;cursor:pointer;font-size:13px;color:var(--text-1);user-select:none}
+    .filter-option:hover{background:var(--bg)}
+    .filter-option input[type=checkbox]{accent-color:var(--navy)}
+    .filter-sep{height:0.5px;background:var(--border);margin:4px 0}
+
+    /* TABLE */
+    .table-wrap{background:var(--surface);border:0.5px solid var(--border);border-radius:14px;overflow:hidden}
+    .section-header{display:flex;align-items:center;justify-content:space-between;padding:9px 20px;background:#F9FAFB;border-bottom:0.5px solid var(--border)}
+    .section-name{font-size:10px;font-weight:600;color:var(--text-2);letter-spacing:0.08em;text-transform:uppercase}
+    .section-count{font-size:10px;color:var(--text-3)}
+    .t-head{display:grid;grid-template-columns:1.4fr 1.5fr 1.9fr 0.9fr 1fr 1fr 1fr;gap:8px;padding:10px 20px;border-bottom:0.5px solid var(--border);background:var(--surface)}
+    .th{font-size:10px;font-weight:600;color:var(--text-3);letter-spacing:0.04em;text-transform:uppercase}
+    .t-row{display:grid;grid-template-columns:1.4fr 1.5fr 1.9fr 0.9fr 1fr 1fr 1fr;gap:8px;padding:15px 20px;border-bottom:0.5px solid var(--border-soft);align-items:center;cursor:pointer;transition:background 0.1s}
+    .t-row:last-child{border-bottom:none}
+    .t-row:hover{background:#FAFBFC}
+    .t-row.expanded{background:#FFF7ED;border-bottom:none}
+    .t-cell{font-size:13px;color:var(--text-1)}
+    .t-cell.mono{font-family:'DM Mono',monospace;font-size:12px;font-weight:500}
+    .t-cell.muted{color:var(--text-2);font-size:12px}
+
+    /* Badges */
+    .badge{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;font-size:10px;font-weight:600}
+    .badge .dot{width:6px;height:6px;border-radius:50%}
+    .badge.arrived{background:var(--green-bg);color:var(--green-text)}
+    .badge.arrived .dot{background:var(--green)}
+    .badge.emptied{background:var(--blue-bg);color:var(--blue-text)}
+    .badge.emptied .dot{background:#3B82F6}
+
+    /* PL button */
+    .pl-btn{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:6px;font-size:10px;font-weight:500;border:0.5px solid var(--border);background:var(--surface);color:var(--text-2);cursor:pointer;transition:all 0.15s;white-space:nowrap}
+    .pl-btn:hover{background:var(--bg)}
+    .pl-btn.has-file{border-color:#BFDBFE;background:#EFF6FF;color:#1D4ED8}
+    .pl-btn.has-file:hover{background:#DBEAFE}
+    .pl-missing{font-size:11px;color:var(--text-3);font-style:italic}
+
+    /* EXPANDED DETAIL */
+    .detail-panel{display:none;background:#FFF7ED;border-bottom:0.5px solid #FDE68A;padding:20px;gap:16px;grid-template-columns:1fr 1fr}
+    .detail-panel.open{display:grid}
+    .detail-card{background:var(--surface);border:0.5px solid var(--border);border-radius:10px;padding:16px 18px}
+    .detail-card-title{font-size:10px;font-weight:600;color:var(--text-3);letter-spacing:0.07em;text-transform:uppercase;margin-bottom:12px}
+    .detail-row-d{display:flex;justify-content:space-between;padding:6px 0;border-bottom:0.5px solid var(--border-soft);font-size:13px}
+    .detail-row-d:last-child{border-bottom:none}
+    .detail-key{color:var(--text-2)}
+    .detail-val{font-weight:500;color:var(--text-1)}
+    .detail-val.mono{font-family:'DM Mono',monospace;font-size:12px}
+    .row-actions{display:flex;gap:6px;margin-top:14px;flex-wrap:wrap}
+    .action-btn{padding:6px 14px;border-radius:7px;font-size:12px;font-weight:500;font-family:'DM Sans',sans-serif;border:0.5px solid var(--border);background:var(--surface);color:var(--text-1);cursor:pointer;transition:background 0.15s}
+    .action-btn:hover{background:var(--bg)}
+    .action-btn.primary{background:var(--navy);color:#fff;border-color:var(--navy)}
+    .action-btn.primary:hover{background:var(--navy-light)}
+    .action-btn.danger{color:var(--red-text);border-color:#FECACA}
+    .action-btn.danger:hover{background:var(--red-bg)}
+
+    /* PL detail */
+    .pl-file-row{display:flex;align-items:center;gap:10px;padding:10px 12px;background:#EFF6FF;border:0.5px solid #BFDBFE;border-radius:8px;margin-top:10px}
+    .pl-file-icon{width:30px;height:30px;background:#DBEAFE;border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+    .pl-file-info{flex:1}
+    .pl-file-name{font-size:12px;font-weight:500;color:#1D4ED8}
+    .pl-file-size{font-size:10px;color:#93C5FD;margin-top:1px}
+    .pl-file-actions{display:flex;gap:5px}
+    .pl-file-action{padding:4px 10px;border-radius:5px;font-size:10px;font-weight:500;border:0.5px solid #BFDBFE;background:var(--surface);color:#1D4ED8;cursor:pointer;font-family:'DM Sans',sans-serif}
+    .pl-file-action:hover{background:#DBEAFE}
+
+    /* EMPTY STATE */
+    .empty-state{display:none;flex-direction:column;align-items:center;justify-content:center;padding:64px 24px;gap:16px;text-align:center}
+    .empty-state.show{display:flex}
+    .empty-anim{animation:floatBob 3.2s ease-in-out infinite}
+    .empty-shadow{width:120px;height:10px;background:#E5E7EB;border-radius:50%;margin:4px auto 0;animation:shadowPulse 3.2s ease-in-out infinite;transform-origin:center}
+    @keyframes floatBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+    @keyframes shadowPulse{0%,100%{transform:scaleX(1);opacity:.12}50%{transform:scaleX(.8);opacity:.06}}
+    .empty-title{font-size:17px;font-weight:600;color:var(--text-1);margin-top:6px}
+    .empty-sub{font-size:13px;color:var(--text-2);max-width:260px;line-height:1.7}
+
+    /* CONFIRM MODAL */
+    .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:200;align-items:center;justify-content:center;padding:20px}
+    .modal-overlay.open{display:flex}
+    .modal{background:var(--surface);border-radius:16px;border:0.5px solid var(--border);padding:28px;width:100%;max-width:400px;animation:modalIn 0.2s ease}
+    @keyframes modalIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+    .modal-title{font-size:17px;font-weight:600;margin-bottom:8px}
+    .modal-body{font-size:13px;color:var(--text-2);line-height:1.6;margin-bottom:24px}
+    .modal-footer{display:flex;justify-content:flex-end;gap:8px}
+
+    /* TOAST */
+    .toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--navy);color:#fff;padding:12px 22px;border-radius:10px;font-size:13px;font-weight:500;z-index:400;transition:transform 0.3s ease;box-shadow:0 8px 24px rgba(0,0,0,0.2)}
+    .toast.show{transform:translateX(-50%) translateY(0)}
+    .toast.success{background:#065F46}
+    .toast.error{background:var(--red-text)}
+
+    /* PAGINATION */
+    .pagination{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-top:0.5px solid var(--border);background:var(--surface)}
+    .page-info{font-size:12px;color:var(--text-3)}
+    .page-btns{display:flex;gap:4px}
+    .page-btn{width:32px;height:32px;border-radius:7px;border:0.5px solid var(--border);background:var(--surface);font-size:12px;color:var(--text-1);cursor:pointer;display:flex;align-items:center;justify-content:center;font-family:'DM Sans',sans-serif;font-weight:500}
+    .page-btn:hover{background:var(--bg)}
+    .page-btn.active{background:var(--navy);color:#fff;border-color:var(--navy)}
+    .page-btn:disabled{opacity:0.35;cursor:default}
+
+    @media(max-width:900px){
+      .stats{grid-template-columns:repeat(2,1fr)}
+      .t-head,.t-row{grid-template-columns:1.4fr 1.5fr 1fr 1fr 1fr}
+      .t-head .th:nth-child(3),.t-row .t-cell:nth-child(3){display:none}
+    }
+    @media(max-width:600px){
+      .main{padding:16px}
+      .nav-date{display:none}
+      .date-range{flex-wrap:wrap}
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav">
+  <a href="dashboard.html" class="nav-logo">
+    <div class="nav-logo-icon">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8h4l3 3v5h-7V8z"/>
+        <circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/>
+      </svg>
+    </div>
+    <span class="nav-logo-name">Container Tracker</span>
+  </a>
+  <div class="nav-links">
+    <a href="dashboard.html" class="nav-link">Active</a>
+    <a href="archive.html"   class="nav-link active">Archive</a>
+    <a href="suppliers.html" class="nav-link">Suppliers</a>
+  </div>
+  <div class="nav-right">
+    <span class="nav-date" id="navDate"></span>
+    <div class="nav-avatar">
+      YO
+      <div class="nav-avatar-menu">
+        <a href="#">My account</a>
+        <a href="index.html" class="danger">Sign out</a>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<!-- MAIN -->
+<main class="main">
+
+  <div class="page-header">
+    <div>
+      <div class="page-title">Archive</div>
+      <div class="page-sub" id="pageSub">All emptied containers</div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+      <button class="btn" onclick="exportExcel()">
+        <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Excel
+      </button>
+      <button class="btn" onclick="exportPDF()">
+        <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        PDF
+      </button>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats">
+    <div class="stat" style="--accent:#1F3864">
+      <div class="stat-label">Total archived</div>
+      <div class="stat-value" id="statTotal">0</div>
+      <div class="stat-sub">all time</div>
+    </div>
+    <div class="stat" style="--accent:#059669">
+      <div class="stat-label">This month</div>
+      <div class="stat-value" style="color:var(--green-text)" id="statMonth">0</div>
+      <div class="stat-sub" id="statMonthLabel">emptied</div>
+    </div>
+    <div class="stat" style="--accent:#93C5FD">
+      <div class="stat-label">Suppliers covered</div>
+      <div class="stat-value" style="color:#1D4ED8" id="statSuppliers">0</div>
+      <div class="stat-sub">in archive</div>
+    </div>
+    <div class="stat" style="--accent:#F59E0B">
+      <div class="stat-label">Most recent</div>
+      <div class="stat-value" style="font-size:14px;font-weight:500;padding-top:4px" id="statRecent">—</div>
+      <div class="stat-sub">last emptied</div>
+    </div>
+  </div>
+
+  <!-- Toolbar -->
+  <div class="toolbar">
+    <div class="search-wrap">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <input type="text" id="searchInput" placeholder="Search container, vessel, supplier..." oninput="renderTable()">
+    </div>
+    <div class="date-range">
+      <input type="date" class="date-input" id="dateFrom" onchange="renderTable()" title="Emptied from">
+      <span class="date-sep">→</span>
+      <input type="date" class="date-input" id="dateTo" onchange="renderTable()" title="Emptied to">
+    </div>
+    <div class="filter-wrap" id="filterWrap">
+      <button class="btn" onclick="toggleFilter()">
+        <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+        Filter
+      </button>
+      <div class="filter-dropdown" id="filterDropdown">
+        <div class="filter-section-label">Supplier</div>
+        <div id="supplierFilters"></div>
+        <div class="filter-sep"></div>
+        <div class="filter-section-label">Shipping line</div>
+        <label class="filter-option"><input type="checkbox" value="Maersk"      onchange="renderTable()"> Maersk</label>
+        <label class="filter-option"><input type="checkbox" value="Hapag-Lloyd" onchange="renderTable()"> Hapag-Lloyd</label>
+        <label class="filter-option"><input type="checkbox" value="CMA CGM"     onchange="renderTable()"> CMA CGM</label>
+        <label class="filter-option"><input type="checkbox" value="MSC"         onchange="renderTable()"> MSC</label>
+      </div>
+    </div>
+    <button class="btn btn-danger" id="clearSelBtn" style="display:none" onclick="openClearModal()">
+      <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>
+      Clear selected
+    </button>
+  </div>
+
+  <!-- Table -->
+  <div class="table-wrap" id="tableWrap">
+    <div class="t-head">
+      <div class="th" style="display:flex;align-items:center;gap:8px">
+        <input type="checkbox" id="selectAll" onchange="toggleSelectAll(this.checked)" style="accent-color:var(--navy)">
+        Container no.
+      </div>
+      <div class="th">Vessel</div>
+      <div class="th">ETA</div>
+      <div class="th">Line</div>
+      <div class="th">Status (at arrival)</div>
+      <div class="th">Emptied on</div>
+      <div class="th">Packing list</div>
+    </div>
+    <div id="tableBody"></div>
+    <div class="empty-state" id="emptyState">
+      <div>
+        <div class="empty-anim">
+          <svg width="130" height="100" viewBox="0 0 130 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <!-- Open empty container -->
+            <rect x="15" y="35" width="100" height="55" rx="4" fill="#E6F1FB" stroke="#1F3864" stroke-width="1.5"/>
+            <line x1="15" y1="55" x2="115" y2="55" stroke="#1F3864" stroke-width="0.8" opacity="0.3"/>
+            <line x1="65" y1="35" x2="65" y2="90" stroke="#1F3864" stroke-width="0.8" opacity="0.3"/>
+            <!-- Open lid left -->
+            <path d="M15 35 L5 10 L65 10 L65 35 Z" fill="#DBEAFE" stroke="#1F3864" stroke-width="1.5"/>
+            <!-- Open lid right -->
+            <path d="M65 35 L65 10 L125 10 L115 35 Z" fill="#DBEAFE" stroke="#1F3864" stroke-width="1.5"/>
+            <!-- Empty inside hint -->
+            <text x="65" y="68" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="11" fill="#9CA3AF">empty</text>
+          </svg>
+        </div>
+        <div class="empty-shadow"></div>
+      </div>
+      <div class="empty-title">No archived containers</div>
+      <div class="empty-sub">Containers you mark as emptied on the dashboard will appear here.</div>
+      <a href="dashboard.html" class="btn btn-primary" style="margin-top:4px;text-decoration:none">← Back to dashboard</a>
+    </div>
+    <div id="pagination"></div>
+  </div>
+</main>
+
+<!-- CONFIRM CLEAR MODAL -->
+<div class="modal-overlay" id="clearModal">
+  <div class="modal">
+    <div class="modal-title">Delete selected containers?</div>
+    <div class="modal-body" id="clearModalBody">This will permanently remove the selected containers from the archive. This cannot be undone.</div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeClearModal()">Cancel</button>
+      <button class="btn btn-danger" onclick="clearSelected()">Yes, delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- RESTORE CONFIRM MODAL -->
+<div class="modal-overlay" id="restoreModal">
+  <div class="modal">
+    <div class="modal-title">Restore to active?</div>
+    <div class="modal-body" id="restoreModalBody">This container will be moved back to the active dashboard.</div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeRestoreModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="confirmRestore()">Yes, restore</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+
+<script>
+const SUPPLIERS = ['POLAND','HOSANNA','TEX','OFTEX'];
+const PAGE_SIZE = 20;
+
+let archiveData = [];
+let activeData  = [];
+let expandedId  = null;
+let selectedIds = new Set();
+let currentPage = 1;
+let restoreId   = null;
+
+// ── STORAGE ────────────────────────────────────────────────────────────────
+async function loadData() {
+  try {
+    const ar = await window.storage.get('ct_archive');
+    const a  = await window.storage.get('ct_active');
+    archiveData = ar ? JSON.parse(ar.value) : [];
+    activeData  = a  ? JSON.parse(a.value)  : [];
+  } catch(e) {
+    archiveData = [];
+    activeData  = [];
+  }
+  render();
+}
+
+async function saveData() {
+  try {
+    await window.storage.set('ct_archive', JSON.stringify(archiveData));
+    await window.storage.set('ct_active',  JSON.stringify(activeData));
+  } catch(e) {}
+}
+
+// ── DATE HELPERS ───────────────────────────────────────────────────────────
+function formatDateFull(iso) {
+  if (!iso || iso === '—') return '—';
+  const d = new Date(iso);
+  const days   = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const dd  = d.getDate();
+  const sfx = [,'st','nd','rd'][dd%10<4&&(dd<11||dd>13)?dd%10:0]||'th';
+  return `${days[d.getDay()]}, ${dd}${sfx} ${months[d.getMonth()]} ${d.getFullYear()}`;
+}
+
+function todayFull() {
+  return formatDateFull(new Date().toISOString().split('T')[0]);
+}
+
+function thisMonth() {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+}
+
+// ── RENDER ─────────────────────────────────────────────────────────────────
+function render() {
+  renderStats();
+  renderTable();
+  populateSupplierFilters();
+  document.getElementById('navDate').textContent = todayFull();
+}
+
+function renderStats() {
+  const total    = archiveData.length;
+  const month    = archiveData.filter(r => r.emptiedOn && r.emptiedOn.startsWith(thisMonth())).length;
+  const suppliers = new Set(archiveData.map(r => r.supplier)).size;
+  const recent   = archiveData.length ? formatDateFull(archiveData[0].emptiedOn) : '—';
+  const months   = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const now      = new Date();
+
+  document.getElementById('statTotal').textContent    = total;
+  document.getElementById('statMonth').textContent    = month;
+  document.getElementById('statMonthLabel').textContent = `in ${months[now.getMonth()]}`;
+  document.getElementById('statSuppliers').textContent = suppliers;
+  document.getElementById('statRecent').textContent   = recent === '—' ? '—' : recent.split(',')[1]?.trim() || recent;
+  document.getElementById('pageSub').textContent = `${total} container${total!==1?'s':''} emptied across ${suppliers} supplier${suppliers!==1?'s':''}`;
+}
+
+function getFiltered() {
+  const q        = document.getElementById('searchInput').value.toLowerCase();
+  const dateFrom = document.getElementById('dateFrom').value;
+  const dateTo   = document.getElementById('dateTo').value;
+  const checkedSuppliers = [...document.querySelectorAll('#supplierFilters input:checked')].map(x=>x.value);
+  const checkedLines     = [...document.querySelectorAll('.filter-dropdown input[value="Maersk"],.filter-dropdown input[value="Hapag-Lloyd"],.filter-dropdown input[value="CMA CGM"],.filter-dropdown input[value="MSC"]')].filter(x=>x.checked).map(x=>x.value);
+
+  return archiveData.filter(r => {
+    if (q && !r.container.toLowerCase().includes(q) && !r.vessel.toLowerCase().includes(q) && !r.supplier.toLowerCase().includes(q)) return false;
+    if (dateFrom && r.emptiedOn < dateFrom) return false;
+    if (dateTo   && r.emptiedOn > dateTo)   return false;
+    if (checkedSuppliers.length && !checkedSuppliers.includes(r.supplier)) return false;
+    if (checkedLines.length     && !checkedLines.includes(r.line))         return false;
+    return true;
+  });
+}
+
+function renderTable() {
+  const all    = getFiltered();
+  const total  = all.length;
+  const start  = (currentPage - 1) * PAGE_SIZE;
+  const rows   = all.slice(start, start + PAGE_SIZE);
+  const body   = document.getElementById('tableBody');
+  const empty  = document.getElementById('emptyState');
+
+  // Update clear btn
+  document.getElementById('clearSelBtn').style.display = selectedIds.size > 0 ? 'flex' : 'none';
+  document.getElementById('selectAll').checked = rows.length > 0 && rows.every(r => selectedIds.has(r.id));
+
+  if (total === 0) { body.innerHTML = ''; empty.classList.add('show'); renderPagination(0, 0); return; }
+  empty.classList.remove('show');
+
+  // Group by supplier
+  const grouped = {};
+  SUPPLIERS.forEach(s => { grouped[s] = []; });
+  rows.forEach(r => { if (grouped[r.supplier]) grouped[r.supplier].push(r); else { grouped[r.supplier] = [r]; } });
+
+  let html = '';
+  Object.entries(grouped).forEach(([supplier, items]) => {
+    if (!items.length) return;
+    html += `<div class="section-header">
+      <span class="section-name">${supplier}</span>
+      <span class="section-count">${items.length} container${items.length>1?'s':''}</span>
+    </div>`;
+    items.forEach(r => {
+      const isExpanded = expandedId === r.id;
+      const isSelected = selectedIds.has(r.id);
+      const plBtn = r.packingList
+        ? `<button class="pl-btn has-file" onclick="viewPL(event,${r.id})">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            View / Download
+           </button>`
+        : `<span class="pl-missing">No file</span>`;
+
+      html += `
+        <div class="t-row${isExpanded?' expanded':''}" onclick="toggleExpand(${r.id})">
+          <div class="t-cell mono" style="display:flex;align-items:center;gap:8px">
+            <input type="checkbox" ${isSelected?'checked':''} onclick="toggleSelect(event,${r.id})" style="accent-color:var(--navy);flex-shrink:0">
+            ${r.container}
+          </div>
+          <div class="t-cell muted">${r.vessel}</div>
+          <div class="t-cell muted">${formatDateFull(r.eta)}</div>
+          <div class="t-cell muted">${r.line}</div>
+          <div class="t-cell"><span class="badge emptied"><span class="dot"></span>Emptied</span></div>
+          <div class="t-cell muted">${formatDateFull(r.emptiedOn)}</div>
+          <div class="t-cell">${plBtn}</div>
+        </div>`;
+
+      if (isExpanded) {
+        html += `
+          <div class="detail-panel open" onclick="event.stopPropagation()">
+            <div class="detail-card">
+              <div class="detail-card-title">Shipment info</div>
+              <div class="detail-row-d"><span class="detail-key">Container</span><span class="detail-val mono">${r.container}</span></div>
+              <div class="detail-row-d"><span class="detail-key">Vessel</span><span class="detail-val">${r.vessel}</span></div>
+              <div class="detail-row-d"><span class="detail-key">Original ETA</span><span class="detail-val">${formatDateFull(r.eta)}</span></div>
+              <div class="detail-row-d"><span class="detail-key">Shipping line</span><span class="detail-val">${r.line}</span></div>
+              <div class="detail-row-d"><span class="detail-key">Supplier</span><span class="detail-val">${r.supplier}</span></div>
+              <div class="detail-row-d"><span class="detail-key">Recipient</span><span class="detail-val">${r.recipient}</span></div>
+              <div class="detail-row-d"><span class="detail-key">Emptied on</span><span class="detail-val" style="color:#92400E">${formatDateFull(r.emptiedOn)}</span></div>
+              <div class="row-actions">
+                <button class="action-btn primary" onclick="openRestoreModal(event,${r.id})">↩ Restore to active</button>
+                <button class="action-btn danger" onclick="permanentDelete(event,${r.id})">Delete permanently</button>
+              </div>
+            </div>
+            <div class="detail-card">
+              <div class="detail-card-title">Packing list</div>
+              ${r.packingList
+                ? `<div class="pl-file-row">
+                    <div class="pl-file-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1D4ED8" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
+                    <div class="pl-file-info">
+                      <div class="pl-file-name">${r.packingList.name}</div>
+                      <div class="pl-file-size">${r.packingList.size} · Uploaded ${r.packingList.uploaded}</div>
+                    </div>
+                    <div class="pl-file-actions">
+                      <button class="pl-file-action" onclick="showToast('Downloading...')">↓ Download</button>
+                    </div>
+                   </div>`
+                : `<div style="font-size:12px;color:var(--text-3);padding:12px 0;font-style:italic">No packing list attached to this container.</div>`
+              }
+            </div>
+          </div>`;
+      }
+    });
+  });
+
+  body.innerHTML = html;
+  renderPagination(total, start);
+}
+
+function renderPagination(total, start) {
+  const pag = document.getElementById('pagination');
+  if (total === 0) { pag.innerHTML = ''; return; }
+  const totalPages = Math.ceil(total / PAGE_SIZE);
+  const end = Math.min(start + PAGE_SIZE, total);
+
+  let btns = '';
+  for (let i = 1; i <= totalPages; i++) {
+    btns += `<button class="page-btn${i===currentPage?' active':''}" onclick="goPage(${i})">${i}</button>`;
+  }
+
+  pag.innerHTML = `
+    <div class="pagination">
+      <span class="page-info">Showing ${start+1}–${end} of ${total} containers</span>
+      <div class="page-btns">
+        <button class="page-btn" onclick="goPage(${currentPage-1})" ${currentPage===1?'disabled':''}>←</button>
+        ${btns}
+        <button class="page-btn" onclick="goPage(${currentPage+1})" ${currentPage===totalPages?'disabled':''}>→</button>
+      </div>
+    </div>`;
+}
+
+function goPage(p) {
+  const total = getFiltered().length;
+  const totalPages = Math.ceil(total / PAGE_SIZE);
+  if (p < 1 || p > totalPages) return;
+  currentPage = p;
+  renderTable();
+}
+
+// ── SELECTION ──────────────────────────────────────────────────────────────
+function toggleSelect(e, id) {
+  e.stopPropagation();
+  if (selectedIds.has(id)) selectedIds.delete(id);
+  else selectedIds.add(id);
+  renderTable();
+}
+
+function toggleSelectAll(checked) {
+  const rows = getFiltered().slice((currentPage-1)*PAGE_SIZE, currentPage*PAGE_SIZE);
+  rows.forEach(r => checked ? selectedIds.add(r.id) : selectedIds.delete(r.id));
+  renderTable();
+}
+
+// ── ACTIONS ────────────────────────────────────────────────────────────────
+function toggleExpand(id) { expandedId = expandedId === id ? null : id; renderTable(); }
+
+function openRestoreModal(e, id) {
+  e.stopPropagation();
+  restoreId = id;
+  const r = archiveData.find(x => x.id === id);
+  document.getElementById('restoreModalBody').textContent = `"${r?.container}" will be moved back to the active dashboard.`;
+  document.getElementById('restoreModal').classList.add('open');
+}
+function closeRestoreModal() { document.getElementById('restoreModal').classList.remove('open'); restoreId = null; }
+
+function confirmRestore() {
+  const idx = archiveData.findIndex(r => r.id === restoreId);
+  if (idx > -1) {
+    const row = { ...archiveData[idx] };
+    delete row.emptiedOn;
+    activeData.push(row);
+    archiveData.splice(idx, 1);
+    expandedId = null;
+    saveData(); render();
+    showToast('Container restored to active dashboard', 'success');
+  }
+  closeRestoreModal();
+}
+
+function permanentDelete(e, id) {
+  e.stopPropagation();
+  if (!confirm('Permanently delete this container from the archive? This cannot be undone.')) return;
+  archiveData = archiveData.filter(r => r.id !== id);
+  expandedId = null;
+  saveData(); render();
+  showToast('Container permanently deleted');
+}
+
+function openClearModal() {
+  document.getElementById('clearModalBody').textContent = `This will permanently delete ${selectedIds.size} selected container${selectedIds.size>1?'s':''} from the archive. This cannot be undone.`;
+  document.getElementById('clearModal').classList.add('open');
+}
+function closeClearModal() { document.getElementById('clearModal').classList.remove('open'); }
+
+function clearSelected() {
+  archiveData = archiveData.filter(r => !selectedIds.has(r.id));
+  selectedIds.clear();
+  closeClearModal();
+  saveData(); render();
+  showToast('Selected containers deleted');
+}
+
+function viewPL(e, id) { e.stopPropagation(); showToast('Opening packing list...'); }
+
+// ── FILTER ─────────────────────────────────────────────────────────────────
+function toggleFilter() { document.getElementById('filterWrap').classList.toggle('open'); }
+document.addEventListener('click', e => {
+  if (!e.target.closest('#filterWrap')) document.getElementById('filterWrap').classList.remove('open');
+});
+
+function populateSupplierFilters() {
+  const suppliers = [...new Set(archiveData.map(r => r.supplier))];
+  document.getElementById('supplierFilters').innerHTML = suppliers.map(s =>
+    `<label class="filter-option"><input type="checkbox" value="${s}" onchange="renderTable()"> ${s}</label>`
+  ).join('');
+}
+
+// ── EXPORT ─────────────────────────────────────────────────────────────────
+function exportExcel() {
+  const rows = archiveData.map(r => ({
+    'Supplier':      r.supplier,
+    'Container no.': r.container,
+    'Vessel':        r.vessel,
+    'ETA':           formatDateFull(r.eta),
+    'Shipping line': r.line,
+    'Recipient':     r.recipient,
+    'Emptied on':    formatDateFull(r.emptiedOn),
+    'Packing list':  r.packingList ? r.packingList.name : '—',
+  }));
+  const ws = XLSX.utils.json_to_sheet(rows);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Archive');
+  XLSX.writeFile(wb, `container_archive_${new Date().toISOString().split('T')[0]}.xlsx`);
+}
+
+function exportPDF() {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation: 'landscape' });
+  doc.setFontSize(13); doc.setTextColor(31,56,100);
+  doc.text('Container Tracker — Archive', 14, 14);
+  doc.setFontSize(9); doc.setTextColor(100);
+  doc.text(`Exported: ${todayFull()}`, 14, 21);
+  doc.autoTable({
+    startY: 28,
+    head: [['Supplier','Container no.','Vessel','ETA','Line','Recipient','Emptied on']],
+    body: archiveData.map(r => [r.supplier, r.container, r.vessel, formatDateFull(r.eta), r.line, r.recipient, formatDateFull(r.emptiedOn)]),
+    headStyles: { fillColor: [31,56,100], fontSize: 8 },
+    bodyStyles: { fontSize: 7 },
+    alternateRowStyles: { fillColor: [255,247,237] },
+    margin: { left: 14, right: 14 },
+  });
+  doc.save(`container_archive_${new Date().toISOString().split('T')[0]}.pdf`);
+}
+
+// ── TOAST ──────────────────────────────────────────────────────────────────
+function showToast(msg, type='') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = `toast ${type}`;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// ── INIT ───────────────────────────────────────────────────────────────────
+loadData();
+</script>
+</body>
+</html>
