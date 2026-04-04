@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 100" class="containers-svg">
+  <style>
+    .containers-float  { animation: floatBob 3.2s ease-in-out infinite; }
+    .containers-shadow { animation: shadowPulse 3.2s ease-in-out infinite; transform-origin: center; }
+
+    @keyframes floatBob    { 0%,100%{transform:translateY(0)}   50%{transform:translateY(-10px)} }
+    @keyframes shadowPulse { 0%,100%{transform:scaleX(1);opacity:.12} 50%{transform:scaleX(.8);opacity:.06} }
+  </style>
+
+  <g class="containers-float">
+    <!-- Bottom row -->
+    <rect x="10" y="62" width="140" height="30" rx="4" fill="#1F3864" stroke="#2A5A9F" stroke-width="1.2"/>
+    <rect x="14" y="65" width="40"  height="24" rx="2" fill="#C53030"/>
+    <rect x="58" y="65" width="40"  height="24" rx="2" fill="#D69E2E"/>
+    <rect x="102" y="65" width="44" height="24" rx="2" fill="#276749"/>
+    <line x1="10"  y1="77" x2="150" y2="77" stroke="rgba(255,255,255,0.12)" stroke-width="1"/>
+    <line x1="56"  y1="62" x2="56"  y2="92" stroke="rgba(255,255,255,0.12)" stroke-width="1"/>
+    <line x1="100" y1="62" x2="100" y2="92" stroke="rgba(255,255,255,0.12)" stroke-width="1"/>
+
+    <!-- Middle row -->
+    <rect x="22" y="32"  width="116" height="32" rx="4" fill="#162D50" stroke="#2A5A9F" stroke-width="1.2"/>
+    <rect x="26" y="35"  width="34"  height="26" rx="2" fill="#3182CE"/>
+    <rect x="64" y="35"  width="34"  height="26" rx="2" fill="#C53030"/>
+    <rect x="102" y="35" width="32"  height="26" rx="2" fill="#D69E2E"/>
+    <line x1="22"  y1="48" x2="138" y2="48" stroke="rgba(255,255,255,0.12)" stroke-width="1"/>
+    <line x1="62"  y1="32" x2="62"  y2="64" stroke="rgba(255,255,255,0.12)" stroke-width="1"/>
+    <line x1="100" y1="32" x2="100" y2="64" stroke="rgba(255,255,255,0.12)" stroke-width="1"/>
+
+    <!-- Top row -->
+    <rect x="40" y="8"  width="80" height="26" rx="4" fill="#1A3A6B" stroke="#2A5A9F" stroke-width="1.2"/>
+    <rect x="44" y="11" width="22" height="20" rx="2" fill="#276749"/>
+    <rect x="70" y="11" width="22" height="20" rx="2" fill="#C53030"/>
+    <rect x="96" y="11" width="20" height="20" rx="2" fill="#3182CE"/>
+    <line x1="40"  y1="21" x2="120" y2="21" stroke="rgba(255,255,255,0.12)" stroke-width="1"/>
+    <line x1="68"  y1="8"  x2="68"  y2="34" stroke="rgba(255,255,255,0.12)" stroke-width="1"/>
+    <line x1="94"  y1="8"  x2="94"  y2="34" stroke="rgba(255,255,255,0.12)" stroke-width="1"/>
+  </g>
+
+  <!-- Shadow -->
+  <ellipse cx="80" cy="97" rx="60" ry="4" fill="#1F3864" class="containers-shadow"/>
+</svg>
