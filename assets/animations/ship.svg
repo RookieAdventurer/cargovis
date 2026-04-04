@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 100" class="ship-svg">
+  <style>
+    .ship-track {
+      animation: shipSail 14s linear infinite;
+    }
+    .ship-bob {
+      animation: bob 3.5s ease-in-out infinite;
+    }
+    .smoke {
+      border-radius: 50%;
+      animation: smokePuff var(--sd, 1.5s) ease-out infinite var(--ss, 0s);
+    }
+    .wheel-fl { transform-origin: 18px 50px; animation: wheelSpin 0.35s linear infinite; }
+    .wheel-rl { transform-origin: 82px 50px; animation: wheelSpin 0.35s linear infinite; }
+    .wheel-rr { transform-origin: 110px 50px; animation: wheelSpin 0.35s linear infinite; }
+    .headlight { animation: headlightPulse 1.5s ease-in-out infinite; }
+
+    @keyframes shipSail  { 0%{transform:translateX(-380px)} 100%{transform:translateX(calc(100vw + 380px))} }
+    @keyframes bob       { 0%,100%{transform:translateY(0) rotate(-0.4deg)} 50%{transform:translateY(-7px) rotate(0.4deg)} }
+    @keyframes smokePuff { 0%{transform:translate(0,0) scale(0.3);opacity:0.8} 100%{transform:translate(-12px,-46px) scale(1.8);opacity:0} }
+    @keyframes wheelSpin { to{transform:rotate(360deg)} }
+    @keyframes headlightPulse { 0%,100%{opacity:0.85} 50%{opacity:1} }
+    @keyframes wakeAnim  { 0%,100%{transform:scaleX(1);opacity:0.3} 50%{transform:scaleX(1.08);opacity:0.5} }
+  </style>
+
+  <!-- Hull -->
+  <path d="M8 72 L252 72 L236 92 L24 92 Z" fill="#0F2040" stroke="#1F3864" stroke-width="1.2"/>
+
+  <!-- Main deck -->
+  <rect x="18" y="44" width="216" height="30" rx="4" fill="#162D50" stroke="#2A5A9F" stroke-width="1"/>
+
+  <!-- Deck containers row 1 -->
+  <rect x="22"  y="48" width="36" height="22" rx="2" fill="#C53030"/>
+  <rect x="62"  y="48" width="36" height="22" rx="2" fill="#1F3864" stroke="#93C5FD" stroke-width="0.5"/>
+  <rect x="102" y="48" width="36" height="22" rx="2" fill="#C27D10"/>
+  <rect x="142" y="48" width="36" height="22" rx="2" fill="#276749"/>
+  <rect x="182" y="48" width="48" height="22" rx="2" fill="#C53030"/>
+
+  <!-- Container dividers row 1 -->
+  <line x1="22"  y1="59" x2="58"  y2="59" stroke="rgba(0,0,0,0.2)"    stroke-width="0.8"/>
+  <line x1="62"  y1="59" x2="98"  y2="59" stroke="rgba(255,255,255,0.1)" stroke-width="0.8"/>
+  <line x1="102" y1="59" x2="138" y2="59" stroke="rgba(0,0,0,0.2)"    stroke-width="0.8"/>
+  <line x1="142" y1="59" x2="178" y2="59" stroke="rgba(255,255,255,0.15)" stroke-width="0.8"/>
+  <line x1="182" y1="59" x2="230" y2="59" stroke="rgba(0,0,0,0.2)"    stroke-width="0.8"/>
+  <line x1="60"  y1="44" x2="60"  y2="74" stroke="#0D2040" stroke-width="1"/>
+  <line x1="100" y1="44" x2="100" y2="74" stroke="#0D2040" stroke-width="1"/>
+  <line x1="140" y1="44" x2="140" y2="74" stroke="#0D2040" stroke-width="1"/>
+  <line x1="180" y1="44" x2="180" y2="74" stroke="#0D2040" stroke-width="1"/>
+
+  <!-- Upper containers row 2 -->
+  <rect x="32" y="22" width="168" height="24" rx="3" fill="#0F2040" stroke="#2A5A9F" stroke-width="0.8"/>
+  <rect x="36"  y="25" width="36" height="18" rx="2" fill="#1F3864" stroke="#93C5FD" stroke-width="0.5"/>
+  <rect x="76"  y="25" width="36" height="18" rx="2" fill="#C53030"/>
+  <rect x="116" y="25" width="36" height="18" rx="2" fill="#C27D10"/>
+  <rect x="156" y="25" width="40" height="18" rx="2" fill="#276749"/>
+  <line x1="74"  y1="22" x2="74"  y2="46" stroke="#0D2040" stroke-width="0.8"/>
+  <line x1="114" y1="22" x2="114" y2="46" stroke="#0D2040" stroke-width="0.8"/>
+  <line x1="154" y1="22" x2="154" y2="46" stroke="#0D2040" stroke-width="0.8"/>
+
+  <!-- Bridge / wheelhouse -->
+  <rect x="108" y="4" width="48" height="20" rx="3" fill="#162D50" stroke="#4A7FBF" stroke-width="1"/>
+  <rect x="112" y="7" width="16" height="10" rx="1.5" fill="#7DD3FC" opacity="0.35" stroke="#7DD3FC" stroke-width="0.5"/>
+  <rect x="132" y="7" width="16" height="10" rx="1.5" fill="#7DD3FC" opacity="0.35" stroke="#7DD3FC" stroke-width="0.5"/>
+
+  <!-- Mast -->
+  <rect x="128" y="0" width="6" height="24" rx="1" fill="#2A5A9F"/>
+  <rect x="124" y="0" width="14" height="5" rx="1" fill="#C53030"/>
+
+  <!-- Headlight -->
+  <rect x="0" y="60" width="10" height="12" rx="2" fill="#FCD34D" opacity="0.9" class="headlight"/>
+  <rect x="0" y="58" width="5"  height="5"  rx="1" fill="#FCD34D" opacity="0.4"/>
+
+  <!-- Stern light -->
+  <rect x="250" y="66" width="7" height="7" rx="1" fill="#FCA5A5" opacity="0.85"/>
+
+  <!-- Waterline stripe -->
+  <line x1="8" y1="72" x2="252" y2="72" stroke="#2A5A9F" stroke-width="0.8"/>
+  <rect x="8" y="74" width="244" height="4" fill="#E53E3E" opacity="0.35"/>
+</svg>
