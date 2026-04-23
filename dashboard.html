@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -6,546 +7,79 @@
   <title>Container Tracker — Dashboard</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
   <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-    :root {
-      --navy:        #1F3864;
-      --navy-dark:   #0F1B35;
-      --navy-mid:    #162D50;
-      --navy-light:  #2A4A7F;
-      --blue-soft:   #4A7FBF;
-      --blue-pale:   #93C5FD;
-      --white:       #ffffff;
-      --bg:          #F8FAFC;
-      --surface:     #ffffff;
-      --border:      #E5E7EB;
-      --border-soft: #F3F4F6;
-      --text-1:      #111827;
-      --text-2:      #6B7280;
-      --text-3:      #9CA3AF;
-      --green:       #059669;
-      --green-bg:    #D1FAE5;
-      --green-text:  #065F46;
-      --red:         #DC2626;
-      --red-bg:      #FEE2E2;
-      --red-text:    #991B1B;
-      --amber-bg:    #FEF3C7;
-      --amber-text:  #92400E;
-    }
-
-    html, body { height: 100%; font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text-1); }
-
-    /* ── NAV ── */
-    .nav {
-      background: var(--navy);
-      height: 56px;
-      display: flex;
-      align-items: center;
-      padding: 0 28px;
-      gap: 0;
-      position: sticky;
-      top: 0;
-      z-index: 100;
-    }
-    .nav-logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
-    .nav-logo-icon {
-      width: 30px; height: 30px;
-      background: rgba(255,255,255,0.15);
-      border-radius: 8px;
-      display: flex; align-items: center; justify-content: center;
-    }
-    .nav-logo-name { color: #fff; font-size: 15px; font-weight: 600; letter-spacing: -0.2px; }
-    .nav-links { display: flex; gap: 2px; margin-left: 32px; }
-    .nav-link {
-      color: rgba(255,255,255,0.55);
-      font-size: 13px;
-      padding: 6px 14px;
-      border-radius: 7px;
-      text-decoration: none;
-      font-weight: 500;
-      transition: background 0.15s, color 0.15s;
-    }
-    .nav-link:hover { background: rgba(255,255,255,0.1); color: #fff; }
-    .nav-link.active { background: rgba(255,255,255,0.15); color: #fff; }
-    .nav-right { margin-left: auto; display: flex; align-items: center; gap: 16px; }
-    .nav-date { font-size: 12px; color: rgba(255,255,255,0.45); }
-    .nav-avatar {
-      width: 30px; height: 30px; border-radius: 50%;
-      background: rgba(255,255,255,0.2);
-      border: 1.5px solid rgba(255,255,255,0.3);
-      display: flex; align-items: center; justify-content: center;
-      font-size: 11px; font-weight: 600; color: #fff;
-      cursor: pointer;
-      position: relative;
-    }
-    .nav-avatar-menu {
-      display: none;
-      position: absolute;
-      top: calc(100% + 8px);
-      right: 0;
-      background: var(--surface);
-      border: 0.5px solid var(--border);
-      border-radius: 10px;
-      padding: 6px;
-      min-width: 160px;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.12);
-    }
-    .nav-avatar:hover .nav-avatar-menu { display: block; }
-    .nav-avatar-menu a {
-      display: block; padding: 8px 12px; font-size: 13px;
-      color: var(--text-1); text-decoration: none; border-radius: 6px;
-    }
-    .nav-avatar-menu a:hover { background: var(--bg); }
-    .nav-avatar-menu a.danger { color: var(--red); }
-
-    /* ── MAIN ── */
-    .main { max-width: 1280px; margin: 0 auto; padding: 28px 28px 60px; }
-
-    /* ── PAGE HEADER ── */
-    .page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; flex-wrap: wrap; gap: 12px; }
-    .page-title { font-size: 20px; font-weight: 600; letter-spacing: -0.3px; }
-    .page-sub { font-size: 13px; color: var(--text-2); margin-top: 2px; }
-
-    /* ── STATS ── */
-    .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 28px; }
-    .stat {
-      background: var(--surface);
-      border: 0.5px solid var(--border);
-      border-radius: 12px;
-      padding: 18px 20px;
-      border-left: 3px solid var(--accent);
-    }
-    .stat-label { font-size: 11px; font-weight: 500; color: var(--text-2); letter-spacing: 0.03em; margin-bottom: 8px; }
-    .stat-value { font-size: 28px; font-weight: 600; color: var(--val-color, var(--text-1)); line-height: 1; letter-spacing: -0.5px; }
-    .stat-sub { font-size: 11px; color: var(--text-3); margin-top: 5px; }
-
-    /* ── TOOLBAR ── */
-    .toolbar { display: flex; gap: 8px; align-items: center; margin-bottom: 20px; flex-wrap: wrap; }
-    .search-wrap {
-      flex: 1; min-width: 200px; height: 38px;
-      background: var(--surface);
-      border: 0.5px solid var(--border);
-      border-radius: 9px;
-      display: flex; align-items: center; gap: 8px;
-      padding: 0 12px;
-      transition: border-color 0.15s;
-    }
-    .search-wrap:focus-within { border-color: var(--blue-soft); }
-    .search-wrap input {
-      flex: 1; border: none; outline: none; background: transparent;
-      font-size: 13px; font-family: 'DM Sans', sans-serif; color: var(--text-1);
-    }
-    .search-wrap input::placeholder { color: var(--text-3); }
-    .btn {
-      height: 38px; padding: 0 16px;
-      border: 0.5px solid var(--border);
-      border-radius: 9px;
-      background: var(--surface);
-      font-size: 13px; font-family: 'DM Sans', sans-serif;
-      color: var(--text-1); cursor: pointer;
-      display: flex; align-items: center; gap: 6px;
-      white-space: nowrap;
-      transition: background 0.15s, border-color 0.15s;
-      font-weight: 500;
-    }
-    .btn:hover { background: var(--bg); border-color: #D1D5DB; }
-    .btn-primary {
-      background: var(--navy); color: #fff;
-      border-color: var(--navy);
-    }
-    .btn-primary:hover { background: var(--navy-light); border-color: var(--navy-light); }
-    .btn-icon { width: 16px; height: 16px; }
-
-    /* Filter dropdown */
-    .filter-wrap { position: relative; }
-    .filter-dropdown {
-      display: none;
-      position: absolute;
-      top: calc(100% + 6px);
-      left: 0;
-      background: var(--surface);
-      border: 0.5px solid var(--border);
-      border-radius: 10px;
-      padding: 8px;
-      min-width: 200px;
-      z-index: 50;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.1);
-    }
-    .filter-wrap.open .filter-dropdown { display: block; }
-    .filter-section-label { font-size: 10px; font-weight: 600; color: var(--text-3); letter-spacing: 0.06em; padding: 4px 8px 6px; text-transform: uppercase; }
-    .filter-option {
-      display: flex; align-items: center; gap: 8px;
-      padding: 7px 8px; border-radius: 6px; cursor: pointer;
-      font-size: 13px; color: var(--text-1);
-      user-select: none;
-    }
-    .filter-option:hover { background: var(--bg); }
-    .filter-option input[type=checkbox] { accent-color: var(--navy); }
-    .filter-sep { height: 0.5px; background: var(--border); margin: 4px 0; }
-
-    /* ── TABLE ── */
-    .table-wrap {
-      background: var(--surface);
-      border: 0.5px solid var(--border);
-      border-radius: 14px;
-      overflow: hidden;
-    }
-    .section-header {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 9px 20px;
-      background: #F9FAFB;
-      border-bottom: 0.5px solid var(--border);
-    }
-    .section-name { font-size: 10px; font-weight: 600; color: var(--text-2); letter-spacing: 0.08em; text-transform: uppercase; }
-    .section-count { font-size: 10px; color: var(--text-3); }
-    .t-head {
-      display: grid;
-      grid-template-columns: 1.5fr 1.6fr 2.1fr 1fr 1fr 1fr 0.8fr;
-      gap: 8px;
-      padding: 10px 20px;
-      border-bottom: 0.5px solid var(--border);
-      background: var(--surface);
-    }
-    .th { font-size: 10px; font-weight: 600; color: var(--text-3); letter-spacing: 0.04em; text-transform: uppercase; }
-    .t-row {
-      display: grid;
-      grid-template-columns: 1.5fr 1.6fr 2.1fr 1fr 1fr 1fr 0.8fr;
-      gap: 8px;
-      padding: 15px 20px;
-      border-bottom: 0.5px solid var(--border-soft);
-      align-items: center;
-      cursor: pointer;
-      transition: background 0.1s;
-    }
-    .t-row:last-child { border-bottom: none; }
-    .t-row:hover { background: #FAFBFC; }
-    .t-row.expanded { background: #F0F4FF; border-bottom: none; }
-    .t-cell { font-size: 13px; color: var(--text-1); }
-    .t-cell.mono { font-family: 'DM Mono', monospace; font-size: 12px; font-weight: 500; }
-    .t-cell.muted { color: var(--text-2); font-size: 12px; }
-
-    /* Badges */
-    .badge {
-      display: inline-flex; align-items: center; gap: 5px;
-      padding: 4px 10px; border-radius: 20px;
-      font-size: 10px; font-weight: 600;
-    }
-    .badge .dot { width: 6px; height: 6px; border-radius: 50%; }
-    .badge.arrived { background: var(--green-bg); color: var(--green-text); }
-    .badge.arrived .dot { background: var(--green); }
-    .badge.pending { background: var(--red-bg); color: var(--red-text); }
-    .badge.pending .dot { background: var(--red); }
-    .badge.emptied { background: #DBEAFE; color: #1D4ED8; }
-
-    /* Packing list button */
-    .pl-btn {
-      display: inline-flex; align-items: center; gap: 5px;
-      padding: 4px 10px; border-radius: 6px;
-      font-size: 10px; font-weight: 500;
-      border: 0.5px solid var(--border);
-      background: var(--surface);
-      color: var(--text-2);
-      cursor: pointer;
-      transition: all 0.15s;
-      white-space: nowrap;
-    }
-    .pl-btn:hover { background: var(--bg); border-color: #D1D5DB; }
-    .pl-btn.has-file { border-color: #BFDBFE; background: #EFF6FF; color: #1D4ED8; }
-    .pl-btn.has-file:hover { background: #DBEAFE; }
-    .pl-missing { font-size: 11px; color: var(--text-3); font-style: italic; }
-
-    /* ── EXPANDED ROW DETAIL ── */
-    .detail-panel {
-      display: none;
-      background: #F0F4FF;
-      border-bottom: 0.5px solid #C7D7F5;
-      padding: 20px;
-      gap: 16px;
-      grid-template-columns: 1fr 1fr;
-    }
-    .detail-panel.open { display: grid; }
-    .detail-card {
-      background: var(--surface);
-      border: 0.5px solid var(--border);
-      border-radius: 10px;
-      padding: 16px 18px;
-    }
-    .detail-card-title {
-      font-size: 10px; font-weight: 600; color: var(--text-3);
-      letter-spacing: 0.07em; text-transform: uppercase; margin-bottom: 12px;
-    }
-    .detail-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 0.5px solid var(--border-soft); font-size: 13px; }
-    .detail-row:last-child { border-bottom: none; }
-    .detail-key { color: var(--text-2); }
-    .detail-val { font-weight: 500; color: var(--text-1); }
-    .detail-val.mono { font-family: 'DM Mono', monospace; font-size: 12px; }
-
-    /* Action buttons inside expanded row */
-    .row-actions { display: flex; gap: 6px; margin-top: 14px; flex-wrap: wrap; }
-    .action-btn {
-      padding: 6px 14px; border-radius: 7px;
-      font-size: 12px; font-weight: 500; font-family: 'DM Sans', sans-serif;
-      border: 0.5px solid var(--border); background: var(--surface);
-      color: var(--text-1); cursor: pointer;
-      transition: background 0.15s;
-    }
-    .action-btn:hover { background: var(--bg); }
-    .action-btn.danger { color: var(--red-text); border-color: #FECACA; }
-    .action-btn.danger:hover { background: var(--red-bg); }
-    .action-btn.success { color: var(--green-text); border-color: #A7F3D0; }
-    .action-btn.success:hover { background: var(--green-bg); }
-    .action-btn.primary { background: var(--navy); color: #fff; border-color: var(--navy); }
-    .action-btn.primary:hover { background: var(--navy-light); }
-
-    /* Packing list upload area */
-    .pl-upload {
-      border: 1.5px dashed #D1D5DB; border-radius: 8px;
-      padding: 16px; text-align: center;
-      color: var(--text-3); font-size: 12px;
-      cursor: pointer; margin-top: 10px;
-      transition: all 0.15s;
-    }
-    .pl-upload:hover { border-color: var(--blue-soft); background: #F0F9FF; color: var(--blue-soft); }
-    .pl-file-row {
-      display: flex; align-items: center; gap: 10px;
-      padding: 10px 12px;
-      background: #EFF6FF; border: 0.5px solid #BFDBFE;
-      border-radius: 8px; margin-top: 10px;
-    }
-    .pl-file-icon {
-      width: 30px; height: 30px; background: #DBEAFE;
-      border-radius: 7px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-    }
-    .pl-file-info { flex: 1; }
-    .pl-file-name { font-size: 12px; font-weight: 500; color: #1D4ED8; }
-    .pl-file-size { font-size: 10px; color: #93C5FD; margin-top: 1px; }
-    .pl-file-actions { display: flex; gap: 5px; }
-    .pl-file-action {
-      padding: 4px 10px; border-radius: 5px; font-size: 10px; font-weight: 500;
-      border: 0.5px solid #BFDBFE; background: var(--surface);
-      color: #1D4ED8; cursor: pointer; font-family: 'DM Sans', sans-serif;
-    }
-    .pl-file-action:hover { background: #DBEAFE; }
-
-    /* ── EMPTY STATE ── */
-    .empty-state {
-      display: none;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 64px 24px;
-      gap: 16px;
-      text-align: center;
-    }
-    .empty-state.show { display: flex; }
-    .empty-anim { animation: floatBob 3.2s ease-in-out infinite; }
-    .empty-shadow {
-      width: 140px; height: 10px; background: #E5E7EB;
-      border-radius: 50%; margin: 4px auto 0;
-      animation: shadowPulse 3.2s ease-in-out infinite;
-      transform-origin: center;
-    }
-    @keyframes floatBob { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
-    @keyframes shadowPulse { 0%,100%{transform:scaleX(1);opacity:.12} 50%{transform:scaleX(.8);opacity:.06} }
-
-    .empty-title { font-size: 17px; font-weight: 600; color: var(--text-1); margin-top: 6px; }
-    .empty-sub { font-size: 13px; color: var(--text-2); max-width: 240px; line-height: 1.7; }
-
-    /* ── ADD MODAL (step 1 — paste) ── */
-    .modal-overlay {
-      display: none;
-      position: fixed; inset: 0;
-      background: rgba(0,0,0,0.45);
-      z-index: 200;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
-    }
-    .modal-overlay.open { display: flex; }
-    .modal {
-      background: var(--surface);
-      border-radius: 16px;
-      border: 0.5px solid var(--border);
-      padding: 28px;
-      width: 100%;
-      max-width: 480px;
-      animation: modalIn 0.2s ease;
-    }
-    .modal.wide { max-width: 640px; }
-    @keyframes modalIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
-    .modal-title { font-size: 17px; font-weight: 600; margin-bottom: 4px; }
-    .modal-sub { font-size: 13px; color: var(--text-2); margin-bottom: 22px; line-height: 1.5; }
-    .form-label { font-size: 11px; font-weight: 600; color: var(--text-2); letter-spacing: 0.04em; text-transform: uppercase; margin-bottom: 5px; display: block; }
-    .form-group-m { margin-bottom: 16px; }
-    textarea.form-input {
-      width: 100%; padding: 10px 12px;
-      background: var(--bg); border: 0.5px solid var(--border);
-      border-radius: 9px; font-size: 13px; font-family: 'DM Mono', monospace;
-      color: var(--text-1); resize: vertical; min-height: 90px;
-      outline: none; transition: border-color 0.15s;
-    }
-    textarea.form-input:focus { border-color: var(--blue-soft); }
-    select.form-input, input.form-input {
-      width: 100%; height: 40px; padding: 0 12px;
-      background: var(--bg); border: 0.5px solid var(--border);
-      border-radius: 9px; font-size: 13px; font-family: 'DM Sans', sans-serif;
-      color: var(--text-1); outline: none;
-      transition: border-color 0.15s; appearance: none;
-      -webkit-appearance: none;
-    }
-    select.form-input:focus, input.form-input:focus { border-color: var(--blue-soft); background: var(--surface); }
-    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-    .modal-footer { display: flex; justify-content: flex-end; gap: 8px; margin-top: 24px; padding-top: 18px; border-top: 0.5px solid var(--border); }
-
-    /* ── REVIEW TABLE (step 2) ── */
-    .review-table { border: 0.5px solid var(--border); border-radius: 10px; overflow: hidden; margin-bottom: 8px; }
-    .review-head {
-      display: grid; gap: 6px; padding: 9px 14px;
-      background: var(--bg); border-bottom: 0.5px solid var(--border);
-      grid-template-columns: 1.4fr 1.4fr 1.6fr 0.9fr 0.8fr;
-    }
-    .review-th { font-size: 10px; font-weight: 600; color: var(--text-3); letter-spacing: 0.04em; text-transform: uppercase; display: flex; align-items: center; gap: 4px; }
-    .auto-tag { font-size: 8px; background: #EFF6FF; color: #1D4ED8; padding: 1px 5px; border-radius: 3px; font-weight: 600; }
-    .review-row {
-      display: grid; gap: 6px; padding: 10px 14px;
-      border-bottom: 0.5px solid var(--border-soft); align-items: center;
-      grid-template-columns: 1.4fr 1.4fr 1.6fr 0.9fr 0.8fr;
-    }
-    .review-row:last-child { border-bottom: none; }
-    .review-cell { font-size: 12px; }
-    .review-cell.mono { font-family: 'DM Mono', monospace; font-weight: 500; font-size: 11px; }
-    .review-input {
-      width: 100%; height: 30px; padding: 0 8px;
-      border-radius: 5px; font-size: 11px; font-family: 'DM Sans', sans-serif;
-      color: var(--text-1); outline: none; border: 0.5px solid var(--border);
-      background: var(--surface);
-    }
-    .review-input.auto { background: #EFF6FF; border-color: #BFDBFE; color: #1D4ED8; }
-    .review-input:focus { border-color: var(--blue-soft); background: var(--surface); color: var(--text-1); }
-
-    /* ── LOADING SCREEN (crane) ── */
-    .loading-overlay {
-      display: none;
-      position: fixed; inset: 0;
-      background: linear-gradient(180deg, #0A1628 0%, #0F2347 50%, #1a3a6b 100%);
-      z-index: 300;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 16px;
-    }
-    .loading-overlay.open { display: flex; }
-    .loading-title { font-size: 20px; font-weight: 600; color: #fff; }
-    .loading-sub { font-size: 13px; color: rgba(255,255,255,0.5); }
-    .loading-bar-wrap { width: 260px; height: 4px; background: rgba(255,255,255,0.15); border-radius: 2px; overflow: hidden; }
-    .loading-bar { height: 100%; background: linear-gradient(90deg, #93C5FD, #fff); border-radius: 2px; width: 0; transition: width 0.4s ease; }
-
-    /* Crane */
-    .crane-wrap { position: absolute; bottom: 0; }
-    @keyframes craneSwing { 0%,100%{transform:rotate(-4deg)} 50%{transform:rotate(4deg)} }
-    @keyframes containerDrop { 0%,35%{transform:translateY(-22px);opacity:0} 50%,100%{transform:translateY(0);opacity:1} }
-    @keyframes craneLight { 0%,100%{opacity:0.6} 50%{opacity:1} }
-    @keyframes waveLoadMove { to{transform:translateX(-50%)} }
-
-    /* ── TOAST ── */
-    .toast {
-      position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(80px);
-      background: var(--navy); color: #fff;
-      padding: 12px 22px; border-radius: 10px;
-      font-size: 13px; font-weight: 500;
-      z-index: 400; transition: transform 0.3s ease;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.2);
-    }
-    .toast.show { transform: translateX(-50%) translateY(0); }
-    .toast.success { background: #065F46; }
-    .toast.error { background: var(--red-text); }
-
-    /* ── RESPONSIVE ── */
-    @media(max-width:900px){
-      .stats { grid-template-columns: repeat(2,1fr); }
-      .t-head, .t-row { grid-template-columns: 1.4fr 1.6fr 1fr 0.8fr 0.7fr; }
-      .t-head .th:nth-child(3),
-      .t-row .t-cell:nth-child(3) { display: none; }
-    }
-    @media(max-width:600px){
-      .main { padding: 16px; }
-      .stats { grid-template-columns: repeat(2,1fr); }
-      .nav-date { display: none; }
-    }
+    .t-head,.t-row{display:grid;grid-template-columns:1.5fr 1.6fr 2.1fr 1fr 1fr 1fr .8fr;gap:8px;padding:10px 20px;align-items:center}
+    .t-head{border-bottom:.5px solid var(--border);background:var(--surface)}
+    .th{font-size:10px;font-weight:600;color:var(--text-3);letter-spacing:.04em;text-transform:uppercase}
+    .t-row{padding:15px 20px;border-bottom:.5px solid var(--border-soft);cursor:pointer;transition:background .1s}
+    .t-row:last-child{border-bottom:none}
+    .t-row:hover{background:#FAFBFC}
+    .t-row.expanded{background:#F0F4FF;border-bottom:none}
+    .t-cell{font-size:13px;color:var(--text-1)}
+    .t-cell.mono{font-family:'DM Mono',monospace;font-size:12px;font-weight:500}
+    .t-cell.muted{color:var(--text-2);font-size:12px}
+    .detail-panel{display:none;background:#F0F4FF;border-bottom:.5px solid #C7D7F5;padding:20px;gap:16px;grid-template-columns:1fr 1fr}
+    .detail-panel.open{display:grid}
+    .pl-upload{border:1.5px dashed var(--border);border-radius:8px;padding:16px;text-align:center;color:var(--text-3);font-size:12px;cursor:pointer;margin-top:10px;transition:all .15s}
+    .pl-upload:hover{border-color:var(--blue-soft);background:#F0F9FF;color:var(--blue-soft)}
+    .review-table{border:.5px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:8px}
+    .review-head{display:grid;gap:6px;padding:9px 14px;background:var(--bg);border-bottom:.5px solid var(--border);grid-template-columns:1.4fr 1.4fr 1.6fr .9fr .8fr}
+    .review-th{font-size:10px;font-weight:600;color:var(--text-3);text-transform:uppercase;display:flex;align-items:center;gap:4px}
+    .auto-tag{font-size:8px;background:#EFF6FF;color:#1D4ED8;padding:1px 5px;border-radius:3px;font-weight:600}
+    .review-row{display:grid;gap:6px;padding:10px 14px;border-bottom:.5px solid var(--border-soft);align-items:center;grid-template-columns:1.4fr 1.4fr 1.6fr .9fr .8fr}
+    .review-row:last-child{border-bottom:none}
+    .review-input{width:100%;height:30px;padding:0 8px;border-radius:5px;font-size:11px;font-family:'DM Sans',sans-serif;color:var(--text-1);outline:none;border:.5px solid var(--border);background:var(--surface)}
+    .review-input.auto{background:#EFF6FF;border-color:#BFDBFE;color:#1D4ED8}
+    .review-input:focus{border-color:var(--blue-soft);background:var(--surface);color:var(--text-1)}
+    .loading-overlay{display:none;position:fixed;inset:0;background:linear-gradient(180deg,#0A1628 0%,#0F2347 50%,#1a3a6b 100%);z-index:300;flex-direction:column;align-items:center;justify-content:center;gap:16px}
+    .loading-overlay.open{display:flex}
+    @keyframes containerDrop{0%,35%{transform:translateY(-22px);opacity:0}50%,100%{transform:translateY(0);opacity:1}}
+    @keyframes craneLight{0%,100%{opacity:.6}50%{opacity:1}}
+    @keyframes waveLoadMove{to{transform:translateX(-50%)}}
   </style>
 </head>
 <body>
 
-<!-- ── LOADING OVERLAY (crane animation) ── -->
 <div class="loading-overlay" id="loadingOverlay">
   <div style="text-align:center;z-index:2;position:relative">
     <div class="loading-title" id="loadingTitle">Looking up your containers...</div>
-    <div class="loading-sub" id="loadingSub">Checking Maersk · Hapag-Lloyd · CMA CGM · MSC</div>
-    <div style="margin-top:20px">
-      <div class="loading-bar-wrap"><div class="loading-bar" id="loadingBar"></div></div>
-    </div>
+    <div class="loading-sub">Checking Maersk · Hapag-Lloyd · CMA CGM · MSC</div>
+    <div style="margin-top:20px"><div class="loading-bar-wrap"><div class="loading-bar" id="loadingBar"></div></div></div>
   </div>
-  <!-- Port crane SVG -->
-  <div class="crane-wrap">
-    <svg width="280" height="160" viewBox="0 0 280 160" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <!-- Ground / quay -->
+  <div style="position:absolute;bottom:0">
+    <svg width="280" height="160" viewBox="0 0 280 160" fill="none">
       <rect x="0" y="140" width="280" height="20" fill="#0D2040"/>
-      <!-- Crane legs -->
       <rect x="60" y="80" width="10" height="60" fill="#2A5A9F"/>
       <rect x="120" y="80" width="10" height="60" fill="#2A5A9F"/>
-      <!-- Crane cross beam -->
       <rect x="40" y="74" width="110" height="8" rx="2" fill="#3B72B8"/>
-      <!-- Crane mast -->
       <rect x="86" y="10" width="10" height="66" fill="#3B72B8"/>
-      <!-- Crane jib -->
       <rect x="86" y="10" width="80" height="7" rx="2" fill="#3B72B8"/>
-      <!-- Back stay -->
       <line x1="91" y1="10" x2="40" y2="74" stroke="#4A7FBF" stroke-width="2" stroke-dasharray="4 3"/>
-      <!-- Cable -->
       <line x1="150" y1="17" x2="150" y2="78" stroke="#93C5FD" stroke-width="1.5"/>
-      <!-- Trolley -->
       <rect x="143" y="14" width="16" height="6" rx="2" fill="#4A7FBF"/>
-      <!-- Suspended container -->
       <g style="transform-origin:150px 78px;animation:containerDrop 2.4s ease-in-out infinite">
         <rect x="134" y="78" width="32" height="18" rx="3" fill="#C53030"/>
-        <line x1="134" y1="87" x2="166" y2="87" stroke="rgba(0,0,0,0.2)" stroke-width="1"/>
-        <line x1="148" y1="78" x2="148" y2="96" stroke="rgba(0,0,0,0.15)" stroke-width="1"/>
+        <line x1="134" y1="87" x2="166" y2="87" stroke="rgba(0,0,0,.2)" stroke-width="1"/>
       </g>
-      <!-- Stacked containers on quay -->
-      <rect x="170" y="108" width="90" height="18" rx="2" fill="#162D50" stroke="#2A5A9F" stroke-width="0.8"/>
+      <rect x="170" y="108" width="90" height="18" rx="2" fill="#162D50" stroke="#2A5A9F" stroke-width=".8"/>
       <rect x="174" y="111" width="26" height="12" rx="1" fill="#C53030"/>
       <rect x="204" y="111" width="26" height="12" rx="1" fill="#276749"/>
       <rect x="234" y="111" width="22" height="12" rx="1" fill="#D69E2E"/>
-      <rect x="178" y="92" width="78" height="18" rx="2" fill="#0F2040" stroke="#2A5A9F" stroke-width="0.8"/>
-      <rect x="182" y="95" width="22" height="12" rx="1" fill="#276749"/>
-      <rect x="208" y="95" width="22" height="12" rx="1" fill="#C53030"/>
-      <rect x="234" y="95" width="18" height="12" rx="1" fill="#3182CE"/>
-      <!-- Crane light -->
-      <circle cx="166" cy="13" r="5" fill="#FCD34D" opacity="0.85" style="animation:craneLight 1.8s ease-in-out infinite"/>
-      <!-- Waves -->
-      <g style="overflow:hidden">
-        <path d="M0 148 Q17 140 35 148 Q52 156 70 148 Q87 140 105 148 Q122 156 140 148 Q157 140 175 148 Q192 156 210 148 Q227 140 245 148 Q262 156 280 148 L280 160 L0 160 Z" fill="#0D2040" opacity="0.6"/>
-      </g>
+      <circle cx="166" cy="13" r="5" fill="#FCD34D" opacity=".85" style="animation:craneLight 1.8s ease-in-out infinite"/>
+      <path d="M0 148 Q17 140 35 148 Q52 156 70 148 Q87 140 105 148 Q122 156 140 148 Q157 140 175 148 Q192 156 210 148 Q227 140 245 148 Q262 156 280 148 L280 160 L0 160 Z" fill="#0D2040" opacity=".6"/>
     </svg>
   </div>
-  <!-- Wave at bottom of loading screen -->
   <div style="position:absolute;bottom:0;left:0;right:0;height:60px;overflow:hidden">
     <svg style="width:200%;animation:waveLoadMove 4s linear infinite" viewBox="0 0 1440 60" preserveAspectRatio="none">
-      <path d="M0 30 Q90 5 180 30 Q270 55 360 30 Q450 5 540 30 Q630 55 720 30 Q810 5 900 30 Q990 55 1080 30 Q1170 5 1260 30 Q1350 55 1440 30 L1440 60 L0 60 Z" fill="#0D2040" opacity="0.8"/>
+      <path d="M0 30 Q90 5 180 30 Q270 55 360 30 Q450 5 540 30 Q630 55 720 30 Q810 5 900 30 Q990 55 1080 30 Q1170 5 1260 30 Q1350 55 1440 30 L1440 60 L0 60 Z" fill="#0D2040" opacity=".8"/>
     </svg>
   </div>
 </div>
 
-<!-- ── NAV ── -->
 <nav class="nav">
   <a href="dashboard.html" class="nav-logo">
-    <div class="nav-logo-icon">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8h4l3 3v5h-7V8z"/>
-        <circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/>
-      </svg>
-    </div>
+    <div class="nav-logo-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg></div>
     <span class="nav-logo-name">Container Tracker</span>
   </a>
   <div class="nav-links">
@@ -555,75 +89,37 @@
   </div>
   <div class="nav-right">
     <span class="nav-date" id="navDate"></span>
-    <div class="nav-avatar" id="navAvatar">
-      YO
+    <div class="nav-avatar">
+      <span id="avatarInitials">?</span>
       <div class="nav-avatar-menu">
-        <a href="#">My account</a>
-        <a href="#" class="danger" onclick="signOut()">Sign out</a>
+        <a href="#" id="menuName" style="font-weight:500;pointer-events:none;cursor:default"></a>
+        <a href="#" id="menuRole" style="font-size:11px;color:var(--text-3);pointer-events:none;cursor:default"></a>
+        <a href="#" class="danger" id="signOutBtn">Sign out</a>
       </div>
     </div>
   </div>
 </nav>
 
-<!-- ── MAIN ── -->
 <main class="main">
   <div class="page-header">
-    <div>
-      <div class="page-title">Active containers</div>
-      <div class="page-sub" id="pageSubtitle">Loading...</div>
-    </div>
+    <div><div class="page-title">Active containers</div><div class="page-sub" id="pageSub">Loading...</div></div>
     <div style="display:flex;gap:8px">
-      <button class="btn" onclick="exportExcel()">
-        <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-        Excel
-      </button>
-      <button class="btn" onclick="exportPDF()">
-        <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-        PDF
-      </button>
-      <button class="btn btn-primary" onclick="openAddModal()">
-        <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
-        Add containers
-      </button>
+      <button class="btn" id="exportXlBtn"><svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Excel</button>
+      <button class="btn" id="exportPdfBtn"><svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>PDF</button>
+      <button class="btn btn-primary" id="addBtn"><svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>Add containers</button>
     </div>
   </div>
-
-  <!-- Stats -->
   <div class="stats">
-    <div class="stat" style="--accent:#1F3864">
-      <div class="stat-label">Active containers</div>
-      <div class="stat-value" id="statActive">0</div>
-      <div class="stat-sub" id="statActiveSub">—</div>
-    </div>
-    <div class="stat" style="--accent:#059669">
-      <div class="stat-label">Arrived</div>
-      <div class="stat-value" style="color:var(--green-text)" id="statArrived">0</div>
-      <div class="stat-sub">ready to empty</div>
-    </div>
-    <div class="stat" style="--accent:#DC2626">
-      <div class="stat-label">Not yet arrived</div>
-      <div class="stat-value" style="color:var(--red-text)" id="statPending">0</div>
-      <div class="stat-sub">in transit</div>
-    </div>
-    <div class="stat" style="--accent:#93C5FD">
-      <div class="stat-label">Archived</div>
-      <div class="stat-value" style="color:#1D4ED8" id="statArchived">0</div>
-      <div class="stat-sub">emptied containers</div>
-    </div>
+    <div class="stat" style="--accent:#1F3864"><div class="stat-label">Active containers</div><div class="stat-value" id="statActive">—</div><div class="stat-sub" id="statActiveSub">—</div></div>
+    <div class="stat" style="--accent:#059669"><div class="stat-label">Arrived</div><div class="stat-value" style="color:var(--green-text)" id="statArrived">—</div><div class="stat-sub">ready to empty</div></div>
+    <div class="stat" style="--accent:#DC2626"><div class="stat-label">Not yet arrived</div><div class="stat-value" style="color:var(--red-text)" id="statPending">—</div><div class="stat-sub">in transit</div></div>
+    <div class="stat" style="--accent:#93C5FD"><div class="stat-label">Archived</div><div class="stat-value" style="color:#1D4ED8" id="statArchived">—</div><div class="stat-sub">emptied containers</div></div>
   </div>
-
-  <!-- Toolbar -->
   <div class="toolbar">
-    <div class="search-wrap">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-      <input type="text" id="searchInput" placeholder="Search container, vessel, supplier..." oninput="renderTable()">
-    </div>
+    <div class="search-wrap"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg><input type="text" id="searchInput" placeholder="Search container, vessel, supplier..." oninput="renderTable()"></div>
     <div class="filter-wrap" id="filterWrap">
-      <button class="btn" onclick="toggleFilter()">
-        <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
-        Filter
-      </button>
-      <div class="filter-dropdown" id="filterDropdown">
+      <button class="btn" id="filterBtn"><svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>Filter</button>
+      <div class="filter-dropdown">
         <div class="filter-section-label">Status</div>
         <label class="filter-option"><input type="checkbox" value="arrived" onchange="renderTable()"> Arrived</label>
         <label class="filter-option"><input type="checkbox" value="pending" onchange="renderTable()"> Not arrived</label>
@@ -639,588 +135,358 @@
       </div>
     </div>
   </div>
-
-  <!-- Table -->
-  <div class="table-wrap" id="tableWrap">
+  <div class="table-wrap">
     <div class="t-head">
-      <div class="th">Container no.</div>
-      <div class="th">Vessel</div>
-      <div class="th">ETA / Arrival date</div>
-      <div class="th">Line</div>
-      <div class="th">Status</div>
-      <div class="th">Recipient</div>
-      <div class="th">Packing list</div>
+      <div class="th">Container no.</div><div class="th">Vessel</div><div class="th">ETA / Arrival date</div>
+      <div class="th">Line</div><div class="th">Status</div><div class="th">Recipient</div><div class="th">Packing list</div>
     </div>
     <div id="tableBody"></div>
-    <!-- Empty state -->
     <div class="empty-state" id="emptyState">
       <div>
         <div class="empty-anim">
-          <svg width="160" height="100" viewBox="0 0 160 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <svg width="160" height="100" viewBox="0 0 160 100" fill="none">
             <rect x="10" y="62" width="140" height="30" rx="4" fill="#1F3864" stroke="#2A5A9F" stroke-width="1.2"/>
             <rect x="14" y="65" width="40" height="24" rx="2" fill="#C53030"/>
             <rect x="58" y="65" width="40" height="24" rx="2" fill="#D69E2E"/>
             <rect x="102" y="65" width="44" height="24" rx="2" fill="#276749"/>
-            <line x1="10" y1="77" x2="150" y2="77" stroke="rgba(255,255,255,0.12)" stroke-width="1"/>
-            <line x1="56" y1="62" x2="56" y2="92" stroke="rgba(255,255,255,0.12)" stroke-width="1"/>
-            <line x1="100" y1="62" x2="100" y2="92" stroke="rgba(255,255,255,0.12)" stroke-width="1"/>
             <rect x="22" y="32" width="116" height="32" rx="4" fill="#162D50" stroke="#2A5A9F" stroke-width="1.2"/>
             <rect x="26" y="35" width="34" height="26" rx="2" fill="#3182CE"/>
             <rect x="64" y="35" width="34" height="26" rx="2" fill="#C53030"/>
             <rect x="102" y="35" width="32" height="26" rx="2" fill="#D69E2E"/>
-            <line x1="22" y1="48" x2="138" y2="48" stroke="rgba(255,255,255,0.12)" stroke-width="1"/>
             <rect x="40" y="8" width="80" height="26" rx="4" fill="#1A3A6B" stroke="#2A5A9F" stroke-width="1.2"/>
             <rect x="44" y="11" width="22" height="20" rx="2" fill="#276749"/>
             <rect x="70" y="11" width="22" height="20" rx="2" fill="#C53030"/>
             <rect x="96" y="11" width="20" height="20" rx="2" fill="#3182CE"/>
-            <line x1="40" y1="21" x2="120" y2="21" stroke="rgba(255,255,255,0.12)" stroke-width="1"/>
           </svg>
         </div>
         <div class="empty-shadow"></div>
       </div>
       <div class="empty-title">No containers yet</div>
-      <div class="empty-sub">Paste your container numbers and the system will fetch vessel, ETA and shipping line automatically.</div>
-      <button class="btn btn-primary" onclick="openAddModal()" style="margin-top:4px">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
-        Add your first container
-      </button>
+      <div class="empty-sub">Paste container numbers and the system will fetch vessel, ETA and shipping line automatically.</div>
+      <button class="btn btn-primary" id="emptyAddBtn" style="margin-top:4px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>Add your first container</button>
     </div>
   </div>
 </main>
 
-<!-- ── ADD MODAL step 1 ── -->
+<!-- ADD MODAL -->
 <div class="modal-overlay" id="addModal">
   <div class="modal">
     <div class="modal-title">Add containers</div>
-    <div class="modal-sub">Paste container numbers — one per line or comma separated. We'll look up vessel, ETA and shipping line automatically.</div>
-    <div class="form-group-m">
-      <label class="form-label">Container numbers</label>
-      <textarea class="form-input" id="containerInput" placeholder="MRKU3877867&#10;MRKU5521221&#10;TXGU7184504" rows="4"></textarea>
-    </div>
+    <div class="modal-sub">Paste container numbers — one per line or comma separated. We'll detect the shipping line automatically.</div>
+    <div class="form-group"><label class="form-label">Container numbers</label><textarea class="form-input" id="containerInput" placeholder="MRKU3877867&#10;MRKU5521221&#10;TXGU7184504" rows="4"></textarea></div>
     <div class="form-grid">
-      <div class="form-group-m">
-        <label class="form-label">Assign to supplier</label>
-        <select class="form-input" id="supplierSelect">
-          <option value="POLAND">Poland</option>
-          <option value="HOSANNA">Hosanna</option>
-          <option value="TEX">TEX</option>
-          <option value="OFTEX">OFTEX</option>
-        </select>
-      </div>
-      <div class="form-group-m">
-        <label class="form-label">Default recipient</label>
-        <select class="form-input" id="recipientSelect">
-          <option value="WAGYINGO">WAGYINGO</option>
-          <option value="Lucy">Lucy</option>
-        </select>
+      <div class="form-group"><label class="form-label">Assign to supplier</label><select class="form-input" id="supplierSelect"></select></div>
+      <div class="form-group"><label class="form-label">Default recipient</label>
+        <select class="form-input" id="recipientSelect"><option value="WAGYINGO">WAGYINGO</option><option value="Lucy">Lucy</option></select>
       </div>
     </div>
     <div class="modal-footer">
-      <button class="btn" onclick="closeAddModal()">Cancel</button>
-      <button class="btn btn-primary" onclick="lookupContainers()">Look up containers →</button>
+      <button class="btn" id="cancelAddBtn">Cancel</button>
+      <button class="btn btn-primary" id="lookupBtn">Look up containers →</button>
     </div>
   </div>
 </div>
 
-<!-- ── REVIEW MODAL step 2 ── -->
+<!-- REVIEW MODAL -->
 <div class="modal-overlay" id="reviewModal">
   <div class="modal wide">
     <div class="modal-title">Review results</div>
-    <div class="modal-sub" id="reviewSub">All fields were filled automatically. Click any blue field to edit before saving.</div>
+    <div class="modal-sub" id="reviewSub">Review fields. Click any blue field to edit before saving.</div>
     <div class="review-table">
       <div class="review-head">
         <div class="review-th">Container</div>
-        <div class="review-th">Vessel <span class="auto-tag">auto</span></div>
+        <div class="review-th">Vessel</div>
         <div class="review-th">ETA <span class="auto-tag">auto</span></div>
         <div class="review-th">Line <span class="auto-tag">auto</span></div>
         <div class="review-th">Recipient</div>
       </div>
       <div id="reviewRows"></div>
     </div>
-    <div style="font-size:11px;color:var(--text-3);margin-top:6px">Blue = auto-filled · Click to edit · Grey = manually entered</div>
+    <div style="font-size:11px;color:var(--text-3);margin-top:6px">Blue = auto-detected · Click to edit</div>
     <div class="modal-footer">
-      <button class="btn" onclick="backToAdd()">← Back</button>
-      <button class="btn btn-primary" id="confirmBtn" onclick="confirmContainers()">Confirm &amp; save all →</button>
+      <button class="btn" id="backBtn">← Back</button>
+      <button class="btn btn-primary" id="confirmBtn">Confirm & save all →</button>
     </div>
   </div>
 </div>
 
-<!-- ── TOAST ── -->
 <div class="toast" id="toast"></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
 
-<script>
-// ── DATA ──────────────────────────────────────────────────────────────────
-const SUPPLIERS = ['POLAND','HOSANNA','TEX','OFTEX'];
+<script type="module">
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
 
-// Container prefix → shipping line map
+const supabase = createClient(
+  'https://qkyjlggmirnbgagkdgch.supabase.co',
+  'sb_publishable_DuJnaj-C8OqeHKTBymoItw_a5t4qtju'
+);
+
+const SUPPLIERS_ORDER = ['POLAND','HOSANNA','TEX','OFTEX'];
 const PREFIX_MAP = {
-  'MRKU':'Maersk','MSKU':'Maersk','MSDU':'Maersk','TRHU':'Maersk',
-  'SUDU':'Maersk','MRSU':'Maersk','HASU':'Maersk','SELU':'Maersk',
-  'MSKU':'Maersk','TCNU':'Maersk',
-  'TXGU':'Hapag-Lloyd','HLCU':'Hapag-Lloyd',
-  'SEKU':'CMA CGM','CMAU':'CMA CGM','UETU':'CMA CGM',
-  'MSCU':'MSC','MEDU':'MSC',
+  MRKU:'Maersk',MSKU:'Maersk',TRHU:'Maersk',SUDU:'Maersk',MRSU:'Maersk',
+  HASU:'Maersk',SELU:'Maersk',TCNU:'Maersk',GESU:'Maersk',GLXU:'Maersk',
+  TXGU:'Hapag-Lloyd',HLCU:'Hapag-Lloyd',
+  SEKU:'CMA CGM',CMAU:'CMA CGM',UETU:'CMA CGM',
+  MSCU:'MSC',MEDU:'MSC',MSMU:'MSC',
 };
+const DAYS=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+const MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
 
-function detectLine(container) {
-  const prefix = container.substring(0,4).toUpperCase();
-  return PREFIX_MAP[prefix] || 'Unknown';
-}
+function detectLine(no){ return PREFIX_MAP[no.substring(0,4).toUpperCase()]||'Unknown'; }
+function fmt(iso){ if(!iso)return'—'; const d=new Date(iso),dd=d.getDate(),sfx=[,'st','nd','rd'][dd%10<4&&(dd<11||dd>13)?dd%10:0]||'th'; return`${DAYS[d.getDay()]}, ${dd}${sfx} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`; }
+function todayFull(){ return fmt(new Date().toISOString().split('T')[0]); }
+function status(eta){ if(!eta)return'pending'; const t=new Date();t.setHours(0,0,0,0);const d=new Date(eta);d.setHours(0,0,0,0);return d<=t?'arrived':'pending'; }
+function toast(msg,type=''){ const t=document.getElementById('toast');t.textContent=msg;t.className=`toast ${type}`;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3200); }
 
-// Seed data
-const SEED = [
-  {id:1,  container:'MRKU3877867', vessel:'RDO GLORY',         eta:'2026-04-01', line:'Maersk',      recipient:'WAGYINGO', supplier:'POLAND',  packingList:null},
-  {id:2,  container:'MRKU5521221', vessel:'RDO GLORY',         eta:'2026-04-01', line:'Maersk',      recipient:'Lucy',     supplier:'POLAND',  packingList:null},
-  {id:3,  container:'MRKU4751810', vessel:'RDO GLORY',         eta:'2026-04-01', line:'Maersk',      recipient:'WAGYINGO', supplier:'POLAND',  packingList:null},
-  {id:4,  container:'MRSU4313777', vessel:'MAERSK UTAH',       eta:'2026-04-19', line:'Maersk',      recipient:'WAGYINGO', supplier:'POLAND',  packingList:null},
-  {id:5,  container:'MSKU0453770', vessel:'MAERSK UTAH',       eta:'2026-04-19', line:'Maersk',      recipient:'WAGYINGO', supplier:'POLAND',  packingList:null},
-  {id:6,  container:'SUDU6873069', vessel:'MAERSK UTAH',       eta:'2026-04-19', line:'Maersk',      recipient:'WAGYINGO', supplier:'POLAND',  packingList:null},
-  {id:7,  container:'MRSU3575221', vessel:'MAERSK EINDHOVEN',  eta:'2026-04-12', line:'Maersk',      recipient:'WAGYINGO', supplier:'POLAND',  packingList:null},
-  {id:8,  container:'TRHU5206816', vessel:'MAERSK UTAH',       eta:'2026-04-19', line:'Maersk',      recipient:'WAGYINGO', supplier:'POLAND',  packingList:null},
-  {id:9,  container:'MRKU4699184', vessel:'SHIJING',           eta:'2026-04-26', line:'Maersk',      recipient:'WAGYINGO', supplier:'POLAND',  packingList:null},
-  {id:10, container:'HASU4080530', vessel:'SHIJING',           eta:'2026-04-26', line:'Maersk',      recipient:'WAGYINGO', supplier:'POLAND',  packingList:null},
-  {id:11, container:'MSKU9950381', vessel:'MAERSK CAIRO',      eta:'2026-05-10', line:'Maersk',      recipient:'WAGYINGO', supplier:'POLAND',  packingList:null},
-  {id:12, container:'MSKU9208747', vessel:'SHIJING',           eta:'2026-04-26', line:'Maersk',      recipient:'WAGYINGO', supplier:'POLAND',  packingList:null},
-  {id:13, container:'SELU4040743', vessel:'SHIJING',           eta:'2026-04-26', line:'Maersk',      recipient:'WAGYINGO', supplier:'POLAND',  packingList:null},
-  {id:14, container:'MRKU6399930', vessel:'MAERSK CAIRO',      eta:'2026-05-10', line:'Maersk',      recipient:'WAGYINGO', supplier:'POLAND',  packingList:null},
-  {id:15, container:'MSKU1047836', vessel:'MAERSK CAIRO',      eta:'2026-05-10', line:'Maersk',      recipient:'WAGYINGO', supplier:'POLAND',  packingList:null},
-  {id:16, container:'MRKU4532068', vessel:'MAERSK CAPE TOWN',  eta:'2026-05-24', line:'Maersk',      recipient:'WAGYINGO', supplier:'POLAND',  packingList:null},
-  {id:17, container:'TXGU7184504', vessel:'SPIRIT OF SYDNEY',  eta:'2026-03-17', line:'Hapag-Lloyd', recipient:'WAGYINGO', supplier:'HOSANNA', packingList:null},
-  {id:18, container:'MRKU4272778', vessel:'MAERSK UTAH',       eta:'2026-04-19', line:'Maersk',      recipient:'WAGYINGO', supplier:'TEX',     packingList:null},
-  {id:19, container:'MRKU6279112', vessel:'MARATHOPOLIS',      eta:'2026-05-03', line:'Maersk',      recipient:'WAGYINGO', supplier:'TEX',     packingList:null},
-  {id:20, container:'SEKU5575892', vessel:'—',                 eta:'2026-03-19', line:'CMA CGM',     recipient:'WAGYINGO', supplier:'OFTEX',   packingList:null},
-];
+// ── AUTH ──────────────────────────────────────────────────────
+let userRole = 'viewer';
+let userId   = null;
 
-let activeData = [];
-let archiveData = [];
-let nextId = 100;
-let expandedId = null;
-let reviewData = [];
+async function initAuth() {
+  const { data:{ session } } = await supabase.auth.getSession();
+  if (!session) { window.location.href='index.html'; return false; }
+  userId = session.user.id;
 
-// ── STORAGE ───────────────────────────────────────────────────────────────
-async function loadData() {
-  try {
-    const a  = await window.storage.get('ct_active');
-    const ar = await window.storage.get('ct_archive');
-    const n  = await window.storage.get('ct_nextId');
-    activeData  = a  ? JSON.parse(a.value)  : JSON.parse(JSON.stringify(SEED));
-    archiveData = ar ? JSON.parse(ar.value) : [];
-    nextId      = n  ? parseInt(n.value)    : 100;
-  } catch(e) {
-    activeData  = JSON.parse(JSON.stringify(SEED));
-    archiveData = [];
-    nextId      = 100;
+  const { data:rd } = await supabase.from('user_roles').select('role,full_name').eq('user_id', userId).single();
+  if (rd) {
+    userRole = rd.role;
+    const ini = (rd.full_name||'U').split(' ').map(n=>n[0]).join('').toUpperCase().substring(0,2);
+    document.getElementById('avatarInitials').textContent = ini;
+    document.getElementById('menuName').textContent = rd.full_name||'';
+    document.getElementById('menuRole').textContent  = rd.role.charAt(0).toUpperCase()+rd.role.slice(1);
   }
-  render();
+  if (userRole==='viewer') document.getElementById('addBtn').style.display='none';
+  document.getElementById('navDate').textContent = todayFull();
+  return true;
 }
 
-async function saveData() {
-  try {
-    await window.storage.set('ct_active',  JSON.stringify(activeData));
-    await window.storage.set('ct_archive', JSON.stringify(archiveData));
-    await window.storage.set('ct_nextId',  String(nextId));
-  } catch(e) {}
-}
+// ── DATA ──────────────────────────────────────────────────────
+let containers=[], archiveCount=0, suppliers=[], expandedId=null, reviewData=[];
 
-// ── DATE HELPERS ──────────────────────────────────────────────────────────
-function getStatus(etaStr) {
-  const today = new Date(); today.setHours(0,0,0,0);
-  const d = new Date(etaStr); d.setHours(0,0,0,0);
-  return d <= today ? 'arrived' : 'pending';
-}
-
-function formatDateFull(iso) {
-  if (!iso || iso === '—') return '—';
-  const d = new Date(iso);
-  const days   = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-  const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-  const dd  = d.getDate();
-  const sfx = [,'st','nd','rd'][dd%10<4&&(dd<11||dd>13)?dd%10:0]||'th';
-  return `${days[d.getDay()]}, ${dd}${sfx} ${months[d.getMonth()]} ${d.getFullYear()}`;
-}
-
-function todayFull() {
-  return formatDateFull(new Date().toISOString().split('T')[0]);
-}
-
-// ── RENDER ────────────────────────────────────────────────────────────────
-function render() {
+async function loadAll() {
+  const [cR,aR,sR] = await Promise.all([
+    supabase.from('containers').select('*').order('eta',{ascending:true}),
+    supabase.from('archive').select('id',{count:'exact',head:true}),
+    supabase.from('suppliers').select('*').order('name'),
+  ]);
+  containers   = cR.data||[];
+  archiveCount = aR.count||0;
+  suppliers    = sR.data||[];
+  populateSelects();
   renderStats();
   renderTable();
-  populateSupplierFilters();
-  document.getElementById('navDate').textContent = todayFull();
-  document.getElementById('pageSubtitle').textContent = `${activeData.length} containers across ${new Set(activeData.map(r=>r.supplier)).size} suppliers`;
+}
+
+supabase.channel('db')
+  .on('postgres_changes',{event:'*',schema:'public',table:'containers'},loadAll)
+  .on('postgres_changes',{event:'*',schema:'public',table:'archive'},()=>{ supabase.from('archive').select('id',{count:'exact',head:true}).then(r=>{archiveCount=r.count||0;renderStats()}); })
+  .subscribe();
+
+function populateSelects() {
+  document.getElementById('supplierSelect').innerHTML = suppliers.map(s=>`<option value="${s.id}">${s.name}</option>`).join('');
+  document.getElementById('supplierFilters').innerHTML = suppliers.map(s=>`<label class="filter-option"><input type="checkbox" value="${s.id}" onchange="renderTable()"> ${s.name}</label>`).join('');
 }
 
 function renderStats() {
-  const arrived = activeData.filter(r => getStatus(r.eta) === 'arrived').length;
-  document.getElementById('statActive').textContent  = activeData.length;
-  document.getElementById('statArrived').textContent = arrived;
-  document.getElementById('statPending').textContent = activeData.length - arrived;
-  document.getElementById('statArchived').textContent = archiveData.length;
-  document.getElementById('statActiveSub').textContent = `across ${new Set(activeData.map(r=>r.supplier)).size} suppliers`;
+  const arr = containers.filter(r=>status(r.eta)==='arrived').length;
+  document.getElementById('statActive').textContent    = containers.length;
+  document.getElementById('statArrived').textContent   = arr;
+  document.getElementById('statPending').textContent   = containers.length-arr;
+  document.getElementById('statArchived').textContent  = archiveCount;
+  document.getElementById('statActiveSub').textContent = `across ${new Set(containers.map(r=>r.supplier_id)).size} suppliers`;
+  document.getElementById('pageSub').textContent       = `${containers.length} containers across ${new Set(containers.map(r=>r.supplier_id)).size} suppliers`;
 }
 
 function getFiltered() {
-  const q = document.getElementById('searchInput').value.toLowerCase();
-  const checkedStatus    = [...document.querySelectorAll('.filter-dropdown input[value="arrived"], .filter-dropdown input[value="pending"]')].filter(x=>x.checked).map(x=>x.value);
-  const checkedSuppliers = [...document.querySelectorAll('#supplierFilters input:checked')].map(x=>x.value);
-  const checkedLines     = [...document.querySelectorAll('.filter-dropdown input[value="Maersk"], .filter-dropdown input[value="Hapag-Lloyd"], .filter-dropdown input[value="CMA CGM"], .filter-dropdown input[value="MSC"]')].filter(x=>x.checked).map(x=>x.value);
-
-  return activeData.filter(r => {
-    if (q && !r.container.toLowerCase().includes(q) && !r.vessel.toLowerCase().includes(q) && !r.supplier.toLowerCase().includes(q) && !r.recipient.toLowerCase().includes(q)) return false;
-    if (checkedStatus.length    && !checkedStatus.includes(getStatus(r.eta))) return false;
-    if (checkedSuppliers.length && !checkedSuppliers.includes(r.supplier)) return false;
-    if (checkedLines.length     && !checkedLines.includes(r.line)) return false;
+  const q  = document.getElementById('searchInput').value.toLowerCase();
+  const cs = [...document.querySelectorAll('.filter-dropdown input[value="arrived"],.filter-dropdown input[value="pending"]')].filter(x=>x.checked).map(x=>x.value);
+  const ss = [...document.querySelectorAll('#supplierFilters input:checked')].map(x=>x.value);
+  const ls = [...document.querySelectorAll('.filter-dropdown input[value="Maersk"],.filter-dropdown input[value="Hapag-Lloyd"],.filter-dropdown input[value="CMA CGM"],.filter-dropdown input[value="MSC"]')].filter(x=>x.checked).map(x=>x.value);
+  return containers.filter(r=>{
+    if(q&&!r.container_no?.toLowerCase().includes(q)&&!r.vessel?.toLowerCase().includes(q)&&!r.supplier_id?.toLowerCase().includes(q)) return false;
+    if(cs.length&&!cs.includes(status(r.eta))) return false;
+    if(ss.length&&!ss.includes(r.supplier_id)) return false;
+    if(ls.length&&!ls.includes(r.line)) return false;
     return true;
   });
 }
 
-function renderTable() {
-  const rows = getFiltered();
-  const body = document.getElementById('tableBody');
-  const empty = document.getElementById('emptyState');
-
-  if (rows.length === 0) {
-    body.innerHTML = '';
-    empty.classList.add('show');
-    return;
-  }
+window.renderTable = function() {
+  const rows=getFiltered(), body=document.getElementById('tableBody'), empty=document.getElementById('emptyState');
+  if(!rows.length){body.innerHTML='';empty.classList.add('show');return;}
   empty.classList.remove('show');
-
-  // Group by supplier
-  const grouped = {};
-  SUPPLIERS.forEach(s => { grouped[s] = []; });
-  rows.forEach(r => { if (grouped[r.supplier]) grouped[r.supplier].push(r); else { grouped[r.supplier] = [r]; } });
-
-  let html = '';
-  Object.entries(grouped).forEach(([supplier, items]) => {
-    if (!items.length) return;
-    html += `<div class="section-header">
-      <span class="section-name">${supplier}</span>
-      <span class="section-count">${items.length} container${items.length>1?'s':''}</span>
-    </div>`;
-    items.forEach(r => {
-      const status  = getStatus(r.eta);
-      const badgeCls = status === 'arrived' ? 'arrived' : 'pending';
-      const badgeTxt = status === 'arrived' ? 'Arrived' : 'Not arrived';
-      const plBtn = r.packingList
-        ? `<button class="pl-btn has-file" onclick="viewPL(event,${r.id})">
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-            View / Download
-           </button>`
-        : `<span class="pl-missing">No file yet</span>`;
-      const isExpanded = expandedId === r.id;
-      html += `
-        <div class="t-row${isExpanded?' expanded':''}" onclick="toggleExpand(${r.id})">
-          <div class="t-cell mono">${r.container}</div>
-          <div class="t-cell muted">${r.vessel}</div>
-          <div class="t-cell muted">${formatDateFull(r.eta)}</div>
-          <div class="t-cell muted">${r.line}</div>
-          <div class="t-cell"><span class="badge ${badgeCls}"><span class="dot"></span>${badgeTxt}</span></div>
-          <div class="t-cell muted">${r.recipient}</div>
-          <div class="t-cell">${plBtn}</div>
-        </div>`;
-      if (isExpanded) {
-        html += buildDetailPanel(r);
-      }
+  const grouped={};
+  SUPPLIERS_ORDER.forEach(s=>{grouped[s]=[]});
+  rows.forEach(r=>{const k=r.supplier_id||'OTHER';if(!grouped[k])grouped[k]=[];grouped[k].push(r);});
+  let html='';
+  Object.entries(grouped).forEach(([sup,items])=>{
+    if(!items.length) return;
+    html+=`<div class="section-header"><span class="section-name">${sup}</span><span class="section-count">${items.length} container${items.length>1?'s':''}</span></div>`;
+    items.forEach(r=>{
+      const s=status(r.eta);
+      const pl=r.packing_list
+        ?`<button class="pl-btn has-file" onclick="dlPL(event,${r.id})"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>View</button>`
+        :`<span class="pl-missing">No file</span>`;
+      html+=`<div class="t-row${expandedId===r.id?' expanded':''}" onclick="toggleExp(${r.id})">
+        <div class="t-cell mono">${r.container_no}</div>
+        <div class="t-cell muted">${r.vessel||'—'}</div>
+        <div class="t-cell muted">${fmt(r.eta)}</div>
+        <div class="t-cell muted">${r.line||'—'}</div>
+        <div class="t-cell"><span class="badge ${s}"><span class="dot"></span>${s==='arrived'?'Arrived':'Not arrived'}</span></div>
+        <div class="t-cell muted">${r.recipient||'—'}</div>
+        <div class="t-cell">${pl}</div>
+      </div>`;
+      if(expandedId===r.id) html+=buildDetail(r);
     });
   });
-  body.innerHTML = html;
+  body.innerHTML=html;
+};
+
+function buildDetail(r) {
+  const canEdit=userRole!=='viewer';
+  const plSec=r.packing_list
+    ?`<div class="pl-file-row"><div class="pl-file-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1D4ED8" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div><div class="pl-file-info"><div class="pl-file-name">${r.packing_list.name}</div><div class="pl-file-size">${r.packing_list.size}</div></div><div class="pl-file-actions"><button class="pl-file-action" onclick="dlPL(event,${r.id})">↓ Download</button>${canEdit?`<button class="pl-file-action" onclick="trigPL(event,${r.id})">Replace</button>`:''}</div></div>`
+    :canEdit?`<div class="pl-upload" onclick="trigPL(event,${r.id})"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" stroke-width="1.5" style="margin-bottom:6px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg><div>Click to upload packing list</div><div style="font-size:10px;margin-top:3px">PDF, Word, Excel accepted</div></div><input type="file" id="pli_${r.id}" accept=".pdf,.doc,.docx,.xls,.xlsx" style="display:none" onchange="upPL(event,${r.id})">`
+    :`<div style="font-size:12px;color:var(--text-3);padding:12px 0;font-style:italic">No packing list attached.</div>`;
+  const acts=canEdit?`<div class="row-actions"><button class="action-btn success" onclick="doEmpty(event,${r.id})">Mark as emptied</button><button class="action-btn danger" onclick="doDelete(event,${r.id})">Remove</button></div>`:'';
+  return`<div class="detail-panel open" onclick="event.stopPropagation()">
+    <div class="detail-card">
+      <div class="detail-card-title">Shipment info</div>
+      <div class="detail-row"><span class="detail-key">Container</span><span class="detail-val mono">${r.container_no}</span></div>
+      <div class="detail-row"><span class="detail-key">Vessel</span><span class="detail-val">${r.vessel||'—'}</span></div>
+      <div class="detail-row"><span class="detail-key">ETA</span><span class="detail-val">${fmt(r.eta)}</span></div>
+      <div class="detail-row"><span class="detail-key">Shipping line</span><span class="detail-val">${r.line||'—'}</span></div>
+      <div class="detail-row"><span class="detail-key">Supplier</span><span class="detail-val">${r.supplier_id||'—'}</span></div>
+      <div class="detail-row"><span class="detail-key">Recipient</span><span class="detail-val">${r.recipient||'—'}</span></div>
+      <div class="detail-row"><span class="detail-key">Status</span><span class="detail-val" style="color:${status(r.eta)==='arrived'?'var(--green-text)':'var(--red-text)'}">${status(r.eta)==='arrived'?'Arrived':'Not arrived'}</span></div>
+      ${acts}
+    </div>
+    <div class="detail-card"><div class="detail-card-title">Packing list</div>${plSec}</div>
+  </div>`;
 }
 
-function buildDetailPanel(r) {
-  const plSection = r.packingList
-    ? `<div class="pl-file-row">
-        <div class="pl-file-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1D4ED8" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
-        <div class="pl-file-info">
-          <div class="pl-file-name">${r.packingList.name}</div>
-          <div class="pl-file-size">${r.packingList.size} · Uploaded ${r.packingList.uploaded}</div>
-        </div>
-        <div class="pl-file-actions">
-          <button class="pl-file-action" onclick="downloadPL(event,${r.id})">↓ Download</button>
-          <button class="pl-file-action" onclick="replacePL(event,${r.id})">Replace</button>
-        </div>
-       </div>`
-    : `<div class="pl-upload" onclick="uploadPL(event,${r.id})">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" stroke-width="1.5" style="margin-bottom:6px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-        <div>Drag &amp; drop or click to upload packing list</div>
-        <div style="font-size:10px;margin-top:3px">PDF, Word, Excel accepted</div>
-       </div>
-       <input type="file" id="plInput_${r.id}" accept=".pdf,.doc,.docx,.xls,.xlsx" style="display:none" onchange="handlePLUpload(event,${r.id})">`;
+window.toggleExp=function(id){expandedId=expandedId===id?null:id;renderTable();};
 
-  return `
-    <div class="detail-panel open" onclick="event.stopPropagation()">
-      <div class="detail-card">
-        <div class="detail-card-title">Shipment info</div>
-        <div class="detail-row"><span class="detail-key">Container</span><span class="detail-val mono">${r.container}</span></div>
-        <div class="detail-row"><span class="detail-key">Vessel</span><span class="detail-val">${r.vessel}</span></div>
-        <div class="detail-row"><span class="detail-key">ETA</span><span class="detail-val">${formatDateFull(r.eta)}</span></div>
-        <div class="detail-row"><span class="detail-key">Shipping line</span><span class="detail-val">${r.line}</span></div>
-        <div class="detail-row"><span class="detail-key">Supplier</span><span class="detail-val">${r.supplier}</span></div>
-        <div class="detail-row"><span class="detail-key">Recipient</span><span class="detail-val">${r.recipient}</span></div>
-        <div class="detail-row"><span class="detail-key">Status</span><span class="detail-val" style="color:${getStatus(r.eta)==='arrived'?'var(--green-text)':'var(--red-text)'}">${getStatus(r.eta)==='arrived'?'Arrived':'Not arrived'}</span></div>
-        <div class="row-actions">
-          <button class="action-btn" onclick="editRow(event,${r.id})">Edit</button>
-          <button class="action-btn success" onclick="markEmptied(event,${r.id})">Mark as emptied</button>
-          <button class="action-btn danger" onclick="deleteRow(event,${r.id})">Remove</button>
-        </div>
-      </div>
-      <div class="detail-card">
-        <div class="detail-card-title">Packing list</div>
-        ${plSection}
-      </div>
-    </div>`;
-}
+// Packing list
+window.trigPL=function(e,id){e.stopPropagation();document.getElementById(`pli_${id}`)?.click();};
+window.upPL=async function(e,id){
+  e.stopPropagation();const file=e.target.files[0];if(!file)return;
+  try{
+    const path=`${id}/${Date.now()}.${file.name.split('.').pop()}`;
+    const {error:ue}=await supabase.storage.from('packing-lists').upload(path,file,{upsert:true});
+    if(ue)throw ue;
+    const pl={name:file.name,size:(file.size/1024).toFixed(0)+' KB',path,uploaded:fmt(new Date().toISOString().split('T')[0])};
+    await supabase.from('containers').update({packing_list:pl}).eq('id',id);
+    toast('Packing list uploaded','success');await loadAll();
+  }catch(err){toast('Upload failed: '+err.message,'error');}
+};
+window.dlPL=async function(e,id){
+  e.stopPropagation();const r=containers.find(x=>x.id===id);if(!r?.packing_list?.path)return;
+  const {data}=await supabase.storage.from('packing-lists').createSignedUrl(r.packing_list.path,60);
+  if(data?.signedUrl)window.open(data.signedUrl,'_blank');
+};
 
-function toggleExpand(id) {
-  expandedId = expandedId === id ? null : id;
-  renderTable();
-}
+// Row actions
+window.doEmpty=async function(e,id){
+  e.stopPropagation();if(!confirm('Mark as emptied and move to archive?'))return;
+  const r=containers.find(x=>x.id===id);if(!r)return;
+  try{
+    await supabase.from('archive').insert([{container_no:r.container_no,vessel:r.vessel,eta:r.eta,line:r.line,recipient:r.recipient,supplier_id:r.supplier_id,packing_list:r.packing_list,emptied_on:new Date().toISOString().split('T')[0],original_id:r.id}]);
+    await supabase.from('containers').delete().eq('id',id);
+    expandedId=null;toast('Moved to archive','success');
+  }catch(err){toast('Error: '+err.message,'error');}
+};
+window.doDelete=async function(e,id){
+  e.stopPropagation();if(!confirm('Remove this container?'))return;
+  await supabase.from('containers').delete().eq('id',id);
+  expandedId=null;toast('Container removed');
+};
 
-// ── PACKING LIST ──────────────────────────────────────────────────────────
-function uploadPL(e, id) {
-  e.stopPropagation();
-  document.getElementById(`plInput_${id}`)?.click();
-}
+// Add flow
+function openAdd(){document.getElementById('addModal').classList.add('open');}
+function closeAdd(){document.getElementById('addModal').classList.remove('open');}
 
-function handlePLUpload(e, id) {
-  e.stopPropagation();
-  const file = e.target.files[0];
-  if (!file) return;
-  const idx = activeData.findIndex(r => r.id === id);
-  if (idx > -1) {
-    activeData[idx].packingList = {
-      name: file.name,
-      size: (file.size / 1024).toFixed(0) + ' KB',
-      uploaded: formatDateFull(new Date().toISOString().split('T')[0]),
-    };
-    saveData();
-    renderTable();
-    showToast('Packing list uploaded successfully', 'success');
-  }
-}
+document.getElementById('addBtn').onclick=openAdd;
+document.getElementById('emptyAddBtn').onclick=openAdd;
+document.getElementById('cancelAddBtn').onclick=closeAdd;
+document.getElementById('backBtn').onclick=function(){document.getElementById('reviewModal').classList.remove('open');openAdd();};
 
-function viewPL(e, id) {
-  e.stopPropagation();
-  showToast('Opening packing list...');
-}
-
-function downloadPL(e, id) {
-  e.stopPropagation();
-  showToast('Downloading packing list...');
-}
-
-function replacePL(e, id) {
-  e.stopPropagation();
-  document.getElementById(`plInput_${id}`)?.click();
-}
-
-// ── ROW ACTIONS ───────────────────────────────────────────────────────────
-function markEmptied(e, id) {
-  e.stopPropagation();
-  if (!confirm('Mark this container as emptied and move to archive?')) return;
-  const idx = activeData.findIndex(r => r.id === id);
-  if (idx > -1) {
-    const row = { ...activeData[idx], emptiedOn: new Date().toISOString().split('T')[0] };
-    archiveData.unshift(row);
-    activeData.splice(idx, 1);
-    expandedId = null;
-    saveData(); renderStats(); renderTable();
-    showToast('Container moved to archive', 'success');
-  }
-}
-
-function deleteRow(e, id) {
-  e.stopPropagation();
-  if (!confirm('Remove this container from the active list?')) return;
-  activeData = activeData.filter(r => r.id !== id);
-  expandedId = null;
-  saveData(); render();
-  showToast('Container removed');
-}
-
-function editRow(e, id) {
-  e.stopPropagation();
-  showToast('Edit feature coming in next update');
-}
-
-// ── ADD / LOOKUP FLOW ─────────────────────────────────────────────────────
-function openAddModal() { document.getElementById('addModal').classList.add('open'); }
-function closeAddModal() { document.getElementById('addModal').classList.remove('open'); }
-function backToAdd() {
-  document.getElementById('reviewModal').classList.remove('open');
-  document.getElementById('addModal').classList.add('open');
-}
-
-async function lookupContainers() {
-  const raw = document.getElementById('containerInput').value;
-  const supplier  = document.getElementById('supplierSelect').value;
-  const recipient = document.getElementById('recipientSelect').value;
-
-  const numbers = raw.split(/[\n,]+/).map(s => s.trim().toUpperCase()).filter(s => s.length >= 4);
-  if (!numbers.length) { showToast('Please enter at least one container number', 'error'); return; }
-
-  closeAddModal();
-  showLoading(`Looking up ${numbers.length} container${numbers.length>1?'s':''}...`, 'Checking Maersk · Hapag-Lloyd · CMA CGM · MSC');
-
-  // Simulate API lookup with progress
-  let progress = 0;
-  const interval = setInterval(() => {
-    progress = Math.min(progress + Math.random() * 18, 92);
-    document.getElementById('loadingBar').style.width = progress + '%';
-  }, 300);
-
-  await new Promise(r => setTimeout(r, 2200));
-  clearInterval(interval);
-  document.getElementById('loadingBar').style.width = '100%';
-  await new Promise(r => setTimeout(r, 300));
-  hideLoading();
-
-  // Build review data (auto-detected line, vessel TBD via real API)
-  reviewData = numbers.map(num => ({
-    container: num,
-    vessel: '— (confirm with shipping line)',
-    eta: '',
-    line: detectLine(num),
-    recipient,
-    supplier,
-    autoFilled: true,
-  }));
-
-  showReviewModal(numbers.length, supplier);
-}
-
-function showReviewModal(count, supplier) {
-  document.getElementById('reviewSub').textContent = `${count} container${count>1?'s':''} detected for ${supplier}. Shipping line auto-detected from prefix. Add vessel and ETA then save.`;
-  const rows = reviewData.map((r, i) => `
-    <div class="review-row">
-      <div class="review-cell mono">${r.container}</div>
-      <input class="review-input" id="rv_vessel_${i}" value="${r.vessel}" placeholder="Vessel name" onclick="this.select()">
-      <input class="review-input" id="rv_eta_${i}" type="date" value="${r.eta}">
-      <div class="review-cell"><input class="review-input auto" id="rv_line_${i}" value="${r.line}"></div>
-      <div class="review-cell">
-        <select class="review-input" id="rv_recip_${i}">
-          <option ${r.recipient==='WAGYINGO'?'selected':''}>WAGYINGO</option>
-          <option ${r.recipient==='Lucy'?'selected':''}>Lucy</option>
-        </select>
-      </div>
-    </div>`).join('');
-  document.getElementById('reviewRows').innerHTML = rows;
-  document.getElementById('confirmBtn').textContent = `Confirm & save ${count} →`;
-  document.getElementById('reviewModal').classList.add('open');
-}
-
-function confirmContainers() {
-  const saved = reviewData.map((r, i) => ({
-    id: nextId++,
-    container: r.container,
-    vessel:    document.getElementById(`rv_vessel_${i}`).value || '—',
-    eta:       document.getElementById(`rv_eta_${i}`).value || '',
-    line:      document.getElementById(`rv_line_${i}`).value,
-    recipient: document.getElementById(`rv_recip_${i}`).value,
-    supplier:  r.supplier,
-    packingList: null,
-  }));
-  activeData.push(...saved);
-  document.getElementById('reviewModal').classList.remove('open');
-  saveData(); render();
-  showToast(`${saved.length} container${saved.length>1?'s':''} added successfully`, 'success');
-}
-
-// ── LOADING ───────────────────────────────────────────────────────────────
-function showLoading(title, sub) {
-  document.getElementById('loadingTitle').textContent = title;
-  document.getElementById('loadingSub').textContent   = sub;
-  document.getElementById('loadingBar').style.width   = '0%';
+document.getElementById('lookupBtn').onclick=async function(){
+  const raw=document.getElementById('containerInput').value;
+  const sid=document.getElementById('supplierSelect').value;
+  const rec=document.getElementById('recipientSelect').value;
+  const nums=raw.split(/[\n,]+/).map(s=>s.trim().toUpperCase()).filter(s=>s.length>=4);
+  if(!nums.length){toast('Enter at least one container number','error');return;}
+  closeAdd();
+  document.getElementById('loadingTitle').textContent=`Looking up ${nums.length} container${nums.length>1?'s':''}...`;
+  document.getElementById('loadingBar').style.width='0%';
   document.getElementById('loadingOverlay').classList.add('open');
-}
-function hideLoading() { document.getElementById('loadingOverlay').classList.remove('open'); }
+  let p=0;const iv=setInterval(()=>{p=Math.min(p+Math.random()*18,92);document.getElementById('loadingBar').style.width=p+'%';},300);
+  await new Promise(r=>setTimeout(r,2000));
+  clearInterval(iv);document.getElementById('loadingBar').style.width='100%';
+  await new Promise(r=>setTimeout(r,300));
+  document.getElementById('loadingOverlay').classList.remove('open');
+  reviewData=nums.map(no=>({container_no:no,vessel:'',eta:'',line:detectLine(no),recipient:rec,supplier_id:sid}));
+  const sname=suppliers.find(s=>s.id===sid)?.name||sid;
+  document.getElementById('reviewSub').textContent=`${nums.length} container${nums.length>1?'s':''} for ${sname}. Line auto-detected from prefix. Add vessel and ETA then save.`;
+  document.getElementById('reviewRows').innerHTML=reviewData.map((r,i)=>`
+    <div class="review-row">
+      <div style="font-family:'DM Mono',monospace;font-size:11px;font-weight:500">${r.container_no}</div>
+      <input class="review-input" id="rv_v_${i}" value="" placeholder="Vessel name">
+      <input class="review-input" id="rv_e_${i}" type="date" value="">
+      <input class="review-input auto" id="rv_l_${i}" value="${r.line}">
+      <select class="review-input" id="rv_r_${i}"><option ${r.recipient==='WAGYINGO'?'selected':''}>WAGYINGO</option><option ${r.recipient==='Lucy'?'selected':''}>Lucy</option></select>
+    </div>`).join('');
+  document.getElementById('confirmBtn').textContent=`Confirm & save ${nums.length} →`;
+  document.getElementById('reviewModal').classList.add('open');
+};
 
-// ── FILTER ────────────────────────────────────────────────────────────────
-function toggleFilter() { document.getElementById('filterWrap').classList.toggle('open'); }
-document.addEventListener('click', e => {
-  if (!e.target.closest('#filterWrap')) document.getElementById('filterWrap').classList.remove('open');
-});
+document.getElementById('confirmBtn').onclick=async function(){
+  const rows=reviewData.map((r,i)=>({container_no:r.container_no,vessel:document.getElementById(`rv_v_${i}`).value||null,eta:document.getElementById(`rv_e_${i}`).value||null,line:document.getElementById(`rv_l_${i}`).value,recipient:document.getElementById(`rv_r_${i}`).value,supplier_id:r.supplier_id}));
+  try{
+    const {error}=await supabase.from('containers').insert(rows);
+    if(error)throw error;
+    document.getElementById('reviewModal').classList.remove('open');
+    toast(`${rows.length} container${rows.length>1?'s':''} added`,'success');
+  }catch(err){toast('Error: '+err.message,'error');}
+};
 
-function populateSupplierFilters() {
-  const suppliers = [...new Set(activeData.map(r => r.supplier))];
-  document.getElementById('supplierFilters').innerHTML = suppliers.map(s =>
-    `<label class="filter-option"><input type="checkbox" value="${s}" onchange="renderTable()"> ${s}</label>`
-  ).join('');
-}
+// Filter
+document.getElementById('filterBtn').onclick=function(){document.getElementById('filterWrap').classList.toggle('open');};
+document.addEventListener('click',e=>{if(!e.target.closest('#filterWrap'))document.getElementById('filterWrap').classList.remove('open');});
 
-// ── EXPORT ────────────────────────────────────────────────────────────────
-function exportExcel() {
-  const rows = activeData.map(r => ({
-    'Supplier':       r.supplier,
-    'Container no.':  r.container,
-    'Vessel':         r.vessel,
-    'ETA':            formatDateFull(r.eta),
-    'Status':         getStatus(r.eta) === 'arrived' ? 'Arrived' : 'Not arrived',
-    'Shipping line':  r.line,
-    'Recipient':      r.recipient,
-    'Packing list':   r.packingList ? r.packingList.name : '—',
-  }));
-  const ws = XLSX.utils.json_to_sheet(rows);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'Active containers');
-  XLSX.writeFile(wb, `container_tracker_${new Date().toISOString().split('T')[0]}.xlsx`);
-}
-
-function exportPDF() {
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF({ orientation: 'landscape' });
-  doc.setFontSize(13); doc.setTextColor(31,56,100);
-  doc.text('Container Tracker — Active containers', 14, 14);
-  doc.setFontSize(9); doc.setTextColor(100);
-  doc.text(`Exported: ${todayFull()}`, 14, 21);
-  const grouped = {};
-  SUPPLIERS.forEach(s => { grouped[s] = []; });
-  activeData.forEach(r => { if (grouped[r.supplier]) grouped[r.supplier].push(r); });
-  let startY = 28;
-  Object.entries(grouped).forEach(([sup, items]) => {
-    if (!items.length) return;
-    doc.setFontSize(8); doc.setTextColor(107,114,128);
-    doc.text(sup, 14, startY); startY += 4;
-    doc.autoTable({
-      startY,
-      head: [['Container no.','Vessel','ETA','Line','Status','Recipient']],
-      body: items.map(r => [r.container, r.vessel, formatDateFull(r.eta), r.line, getStatus(r.eta)==='arrived'?'Arrived':'Not arrived', r.recipient]),
-      headStyles: { fillColor: [31,56,100], fontSize: 8 },
-      bodyStyles: { fontSize: 7 },
-      alternateRowStyles: { fillColor: [240,244,255] },
-      margin: { left: 14, right: 14 },
-      didParseCell(data) {
-        if (data.section==='body' && data.column.index===4) {
-          data.cell.styles.textColor = data.cell.raw==='Arrived' ? [6,95,70] : [153,27,27];
-          data.cell.styles.fontStyle = 'bold';
-        }
-      },
-    });
-    startY = doc.lastAutoTable.finalY + 8;
+// Export
+document.getElementById('exportXlBtn').onclick=function(){
+  const rows=containers.map(r=>({'Supplier':r.supplier_id,'Container':r.container_no,'Vessel':r.vessel||'—','ETA':fmt(r.eta),'Status':status(r.eta)==='arrived'?'Arrived':'Not arrived','Line':r.line,'Recipient':r.recipient}));
+  const ws=XLSX.utils.json_to_sheet(rows),wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'Active');XLSX.writeFile(wb,`containers_${new Date().toISOString().split('T')[0]}.xlsx`);
+};
+document.getElementById('exportPdfBtn').onclick=function(){
+  const {jsPDF}=window.jspdf,doc=new jsPDF({orientation:'landscape'});
+  doc.setFontSize(13);doc.setTextColor(31,56,100);doc.text('Container Tracker — Active',14,14);
+  doc.setFontSize(9);doc.setTextColor(100);doc.text(`Exported: ${todayFull()}`,14,21);
+  const grouped={};SUPPLIERS_ORDER.forEach(s=>{grouped[s]=[]});containers.forEach(r=>{if(grouped[r.supplier_id])grouped[r.supplier_id].push(r);});
+  let y=28;
+  Object.entries(grouped).forEach(([sup,items])=>{
+    if(!items.length)return;
+    doc.setFontSize(8);doc.setTextColor(107,114,128);doc.text(sup,14,y);y+=4;
+    doc.autoTable({startY:y,head:[['Container','Vessel','ETA','Line','Status','Recipient']],body:items.map(r=>[r.container_no,r.vessel||'—',fmt(r.eta),r.line,status(r.eta)==='arrived'?'Arrived':'Not arrived',r.recipient]),headStyles:{fillColor:[31,56,100],fontSize:8},bodyStyles:{fontSize:7},alternateRowStyles:{fillColor:[240,244,255]},margin:{left:14,right:14},didParseCell(d){if(d.section==='body'&&d.column.index===4){d.cell.styles.textColor=d.cell.raw==='Arrived'?[6,95,70]:[153,27,27];d.cell.styles.fontStyle='bold';}}});
+    y=doc.lastAutoTable.finalY+10;if(y>180){doc.addPage();y=20;}
   });
-  doc.save(`container_tracker_${new Date().toISOString().split('T')[0]}.pdf`);
-}
+  doc.save(`containers_${new Date().toISOString().split('T')[0]}.pdf`);
+};
 
-// ── TOAST ─────────────────────────────────────────────────────────────────
-function showToast(msg, type='') {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.className = `toast ${type}`;
-  t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 3000);
-}
+// Sign out
+document.getElementById('signOutBtn').onclick=async function(e){e.preventDefault();await supabase.auth.signOut();window.location.href='index.html';};
 
-// ── SIGN OUT ──────────────────────────────────────────────────────────────
-function signOut() { window.location.href = 'index.html'; }
-
-// ── INIT ──────────────────────────────────────────────────────────────────
-loadData();
+// Init
+const ok = await initAuth();
+if (ok) await loadAll();
 </script>
 </body>
 </html>
+
+dashboard done
