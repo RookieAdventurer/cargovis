@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -9,34 +8,36 @@
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/styles.css">
   <style>
-    .t-head,.t-row{display:grid;grid-template-columns:1.5fr 1.6fr 2.1fr 1fr 1fr 1fr .8fr;gap:8px;padding:10px 20px;align-items:center}
-    .t-head{border-bottom:.5px solid var(--border);background:var(--surface)}
-    .th{font-size:10px;font-weight:600;color:var(--text-3);letter-spacing:.04em;text-transform:uppercase}
-    .t-row{padding:15px 20px;border-bottom:.5px solid var(--border-soft);cursor:pointer;transition:background .1s}
+    .t-head,.t-row{display:grid;grid-template-columns:1.5fr 1.6fr 2.1fr 1fr 1fr 1fr 0.8fr;gap:8px;padding:10px 20px;align-items:center}
+    .t-head{border-bottom:0.5px solid var(--border);background:var(--surface)}
+    .th{font-size:10px;font-weight:600;color:var(--text-3);letter-spacing:0.04em;text-transform:uppercase}
+    .t-row{padding:15px 20px;border-bottom:0.5px solid var(--border-soft);cursor:pointer;transition:background 0.1s}
     .t-row:last-child{border-bottom:none}
     .t-row:hover{background:#FAFBFC}
     .t-row.expanded{background:#F0F4FF;border-bottom:none}
     .t-cell{font-size:13px;color:var(--text-1)}
     .t-cell.mono{font-family:'DM Mono',monospace;font-size:12px;font-weight:500}
     .t-cell.muted{color:var(--text-2);font-size:12px}
-    .detail-panel{display:none;background:#F0F4FF;border-bottom:.5px solid #C7D7F5;padding:20px;gap:16px;grid-template-columns:1fr 1fr}
+    .detail-panel{display:none;background:#F0F4FF;border-bottom:0.5px solid #C7D7F5;padding:20px;gap:16px;grid-template-columns:1fr 1fr}
     .detail-panel.open{display:grid}
-    .pl-upload{border:1.5px dashed var(--border);border-radius:8px;padding:16px;text-align:center;color:var(--text-3);font-size:12px;cursor:pointer;margin-top:10px;transition:all .15s}
+    .pl-upload{border:1.5px dashed var(--border);border-radius:8px;padding:16px;text-align:center;color:var(--text-3);font-size:12px;cursor:pointer;margin-top:10px;transition:all 0.15s}
     .pl-upload:hover{border-color:var(--blue-soft);background:#F0F9FF;color:var(--blue-soft)}
-    .review-table{border:.5px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:8px}
-    .review-head{display:grid;gap:6px;padding:9px 14px;background:var(--bg);border-bottom:.5px solid var(--border);grid-template-columns:1.4fr 1.4fr 1.6fr .9fr .8fr}
-    .review-th{font-size:10px;font-weight:600;color:var(--text-3);text-transform:uppercase;display:flex;align-items:center;gap:4px}
+    .review-table{border:0.5px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:8px}
+    .review-head{display:grid;gap:6px;padding:9px 14px;background:var(--bg);border-bottom:0.5px solid var(--border);grid-template-columns:1.4fr 1.4fr 1.6fr 0.9fr 0.8fr}
+    .review-th{font-size:10px;font-weight:600;color:var(--text-3);letter-spacing:0.04em;text-transform:uppercase;display:flex;align-items:center;gap:4px}
     .auto-tag{font-size:8px;background:#EFF6FF;color:#1D4ED8;padding:1px 5px;border-radius:3px;font-weight:600}
-    .review-row{display:grid;gap:6px;padding:10px 14px;border-bottom:.5px solid var(--border-soft);align-items:center;grid-template-columns:1.4fr 1.4fr 1.6fr .9fr .8fr}
+    .review-row{display:grid;gap:6px;padding:10px 14px;border-bottom:0.5px solid var(--border-soft);align-items:center;grid-template-columns:1.4fr 1.4fr 1.6fr 0.9fr 0.8fr}
     .review-row:last-child{border-bottom:none}
-    .review-input{width:100%;height:30px;padding:0 8px;border-radius:5px;font-size:11px;font-family:'DM Sans',sans-serif;color:var(--text-1);outline:none;border:.5px solid var(--border);background:var(--surface)}
+    .review-input{width:100%;height:30px;padding:0 8px;border-radius:5px;font-size:11px;font-family:'DM Sans',sans-serif;color:var(--text-1);outline:none;border:0.5px solid var(--border);background:var(--surface)}
     .review-input.auto{background:#EFF6FF;border-color:#BFDBFE;color:#1D4ED8}
     .review-input:focus{border-color:var(--blue-soft);background:var(--surface);color:var(--text-1)}
     .loading-overlay{display:none;position:fixed;inset:0;background:linear-gradient(180deg,#0A1628 0%,#0F2347 50%,#1a3a6b 100%);z-index:300;flex-direction:column;align-items:center;justify-content:center;gap:16px}
     .loading-overlay.open{display:flex}
+    @keyframes craneSwing{0%,100%{transform:rotate(-4deg)}50%{transform:rotate(4deg)}}
     @keyframes containerDrop{0%,35%{transform:translateY(-22px);opacity:0}50%,100%{transform:translateY(0);opacity:1}}
-    @keyframes craneLight{0%,100%{opacity:.6}50%{opacity:1}}
+    @keyframes craneLight{0%,100%{opacity:0.6}50%{opacity:1}}
     @keyframes waveLoadMove{to{transform:translateX(-50%)}}
+    @keyframes progressAnim{0%{width:0%}70%{width:80%}100%{width:100%}}
   </style>
 </head>
 <body>
@@ -44,35 +45,40 @@
 <div class="loading-overlay" id="loadingOverlay">
   <div style="text-align:center;z-index:2;position:relative">
     <div class="loading-title" id="loadingTitle">Looking up your containers...</div>
-    <div class="loading-sub">Checking Maersk · Hapag-Lloyd · CMA CGM · MSC</div>
+    <div class="loading-sub"  id="loadingSub">Checking Maersk · Hapag-Lloyd · CMA CGM · MSC</div>
     <div style="margin-top:20px"><div class="loading-bar-wrap"><div class="loading-bar" id="loadingBar"></div></div></div>
   </div>
   <div style="position:absolute;bottom:0">
     <svg width="280" height="160" viewBox="0 0 280 160" fill="none">
-      <rect x="0" y="140" width="280" height="20" fill="#0D2040"/>
-      <rect x="60" y="80" width="10" height="60" fill="#2A5A9F"/>
-      <rect x="120" y="80" width="10" height="60" fill="#2A5A9F"/>
-      <rect x="40" y="74" width="110" height="8" rx="2" fill="#3B72B8"/>
-      <rect x="86" y="10" width="10" height="66" fill="#3B72B8"/>
-      <rect x="86" y="10" width="80" height="7" rx="2" fill="#3B72B8"/>
+      <rect x="0"   y="140" width="280" height="20" fill="#0D2040"/>
+      <rect x="60"  y="80"  width="10"  height="60" fill="#2A5A9F"/>
+      <rect x="120" y="80"  width="10"  height="60" fill="#2A5A9F"/>
+      <rect x="40"  y="74"  width="110" height="8"  rx="2" fill="#3B72B8"/>
+      <rect x="86"  y="10"  width="10"  height="66" fill="#3B72B8"/>
+      <rect x="86"  y="10"  width="80"  height="7"  rx="2" fill="#3B72B8"/>
       <line x1="91" y1="10" x2="40" y2="74" stroke="#4A7FBF" stroke-width="2" stroke-dasharray="4 3"/>
       <line x1="150" y1="17" x2="150" y2="78" stroke="#93C5FD" stroke-width="1.5"/>
       <rect x="143" y="14" width="16" height="6" rx="2" fill="#4A7FBF"/>
       <g style="transform-origin:150px 78px;animation:containerDrop 2.4s ease-in-out infinite">
         <rect x="134" y="78" width="32" height="18" rx="3" fill="#C53030"/>
-        <line x1="134" y1="87" x2="166" y2="87" stroke="rgba(0,0,0,.2)" stroke-width="1"/>
+        <line x1="134" y1="87" x2="166" y2="87" stroke="rgba(0,0,0,0.2)" stroke-width="1"/>
+        <line x1="148" y1="78" x2="148" y2="96" stroke="rgba(0,0,0,0.15)" stroke-width="1"/>
       </g>
-      <rect x="170" y="108" width="90" height="18" rx="2" fill="#162D50" stroke="#2A5A9F" stroke-width=".8"/>
+      <rect x="170" y="108" width="90" height="18" rx="2" fill="#162D50" stroke="#2A5A9F" stroke-width="0.8"/>
       <rect x="174" y="111" width="26" height="12" rx="1" fill="#C53030"/>
       <rect x="204" y="111" width="26" height="12" rx="1" fill="#276749"/>
       <rect x="234" y="111" width="22" height="12" rx="1" fill="#D69E2E"/>
-      <circle cx="166" cy="13" r="5" fill="#FCD34D" opacity=".85" style="animation:craneLight 1.8s ease-in-out infinite"/>
-      <path d="M0 148 Q17 140 35 148 Q52 156 70 148 Q87 140 105 148 Q122 156 140 148 Q157 140 175 148 Q192 156 210 148 Q227 140 245 148 Q262 156 280 148 L280 160 L0 160 Z" fill="#0D2040" opacity=".6"/>
+      <rect x="178" y="92"  width="78" height="18" rx="2" fill="#0F2040" stroke="#2A5A9F" stroke-width="0.8"/>
+      <rect x="182" y="95"  width="22" height="12" rx="1" fill="#276749"/>
+      <rect x="208" y="95"  width="22" height="12" rx="1" fill="#C53030"/>
+      <rect x="234" y="95"  width="18" height="12" rx="1" fill="#3182CE"/>
+      <circle cx="166" cy="13" r="5" fill="#FCD34D" opacity="0.85" style="animation:craneLight 1.8s ease-in-out infinite"/>
+      <path d="M0 148 Q17 140 35 148 Q52 156 70 148 Q87 140 105 148 Q122 156 140 148 Q157 140 175 148 Q192 156 210 148 Q227 140 245 148 Q262 156 280 148 L280 160 L0 160 Z" fill="#0D2040" opacity="0.6"/>
     </svg>
   </div>
   <div style="position:absolute;bottom:0;left:0;right:0;height:60px;overflow:hidden">
     <svg style="width:200%;animation:waveLoadMove 4s linear infinite" viewBox="0 0 1440 60" preserveAspectRatio="none">
-      <path d="M0 30 Q90 5 180 30 Q270 55 360 30 Q450 5 540 30 Q630 55 720 30 Q810 5 900 30 Q990 55 1080 30 Q1170 5 1260 30 Q1350 55 1440 30 L1440 60 L0 60 Z" fill="#0D2040" opacity=".8"/>
+      <path d="M0 30 Q90 5 180 30 Q270 55 360 30 Q450 5 540 30 Q630 55 720 30 Q810 5 900 30 Q990 55 1080 30 Q1170 5 1260 30 Q1350 55 1440 30 L1440 60 L0 60 Z" fill="#0D2040" opacity="0.8"/>
     </svg>
   </div>
 </div>
@@ -84,17 +90,17 @@
   </a>
   <div class="nav-links">
     <a href="dashboard.html" class="nav-link active">Active</a>
-    <a href="archive.html" class="nav-link">Archive</a>
+    <a href="archive.html"   class="nav-link">Archive</a>
     <a href="suppliers.html" class="nav-link">Suppliers</a>
   </div>
   <div class="nav-right">
     <span class="nav-date" id="navDate"></span>
-    <div class="nav-avatar">
+    <div class="nav-avatar" id="navAvatar">
       <span id="avatarInitials">?</span>
       <div class="nav-avatar-menu">
-        <a href="#" id="menuName" style="font-weight:500;pointer-events:none;cursor:default"></a>
-        <a href="#" id="menuRole" style="font-size:11px;color:var(--text-3);pointer-events:none;cursor:default"></a>
-        <a href="#" class="danger" id="signOutBtn">Sign out</a>
+        <a href="#" id="menuName" style="font-weight:500;pointer-events:none"></a>
+        <a href="#" id="menuRole"  style="font-size:11px;color:var(--text-3);pointer-events:none"></a>
+        <a href="index.html" class="danger" onclick="signOut()">Sign out</a>
       </div>
     </div>
   </div>
@@ -102,24 +108,29 @@
 
 <main class="main">
   <div class="page-header">
-    <div><div class="page-title">Active containers</div><div class="page-sub" id="pageSub">Loading...</div></div>
+    <div>
+      <div class="page-title">Active containers</div>
+      <div class="page-sub" id="pageSub">Loading...</div>
+    </div>
     <div style="display:flex;gap:8px">
-      <button class="btn" id="exportXlBtn"><svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Excel</button>
-      <button class="btn" id="exportPdfBtn"><svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>PDF</button>
-      <button class="btn btn-primary" id="addBtn"><svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>Add containers</button>
+      <button class="btn" onclick="exportExcel()"><svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Excel</button>
+      <button class="btn" onclick="exportPDF()"><svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>PDF</button>
+      <button class="btn btn-primary" id="addBtn" onclick="openAddModal()"><svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>Add containers</button>
     </div>
   </div>
+
   <div class="stats">
     <div class="stat" style="--accent:#1F3864"><div class="stat-label">Active containers</div><div class="stat-value" id="statActive">—</div><div class="stat-sub" id="statActiveSub">—</div></div>
     <div class="stat" style="--accent:#059669"><div class="stat-label">Arrived</div><div class="stat-value" style="color:var(--green-text)" id="statArrived">—</div><div class="stat-sub">ready to empty</div></div>
     <div class="stat" style="--accent:#DC2626"><div class="stat-label">Not yet arrived</div><div class="stat-value" style="color:var(--red-text)" id="statPending">—</div><div class="stat-sub">in transit</div></div>
     <div class="stat" style="--accent:#93C5FD"><div class="stat-label">Archived</div><div class="stat-value" style="color:#1D4ED8" id="statArchived">—</div><div class="stat-sub">emptied containers</div></div>
   </div>
+
   <div class="toolbar">
     <div class="search-wrap"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg><input type="text" id="searchInput" placeholder="Search container, vessel, supplier..." oninput="renderTable()"></div>
     <div class="filter-wrap" id="filterWrap">
-      <button class="btn" id="filterBtn"><svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>Filter</button>
-      <div class="filter-dropdown">
+      <button class="btn" onclick="toggleFilter()"><svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>Filter</button>
+      <div class="filter-dropdown" id="filterDropdown">
         <div class="filter-section-label">Status</div>
         <label class="filter-option"><input type="checkbox" value="arrived" onchange="renderTable()"> Arrived</label>
         <label class="filter-option"><input type="checkbox" value="pending" onchange="renderTable()"> Not arrived</label>
@@ -128,17 +139,20 @@
         <div id="supplierFilters"></div>
         <div class="filter-sep"></div>
         <div class="filter-section-label">Shipping line</div>
-        <label class="filter-option"><input type="checkbox" value="Maersk" onchange="renderTable()"> Maersk</label>
+        <label class="filter-option"><input type="checkbox" value="Maersk"      onchange="renderTable()"> Maersk</label>
         <label class="filter-option"><input type="checkbox" value="Hapag-Lloyd" onchange="renderTable()"> Hapag-Lloyd</label>
-        <label class="filter-option"><input type="checkbox" value="CMA CGM" onchange="renderTable()"> CMA CGM</label>
-        <label class="filter-option"><input type="checkbox" value="MSC" onchange="renderTable()"> MSC</label>
+        <label class="filter-option"><input type="checkbox" value="CMA CGM"     onchange="renderTable()"> CMA CGM</label>
+        <label class="filter-option"><input type="checkbox" value="MSC"         onchange="renderTable()"> MSC</label>
       </div>
     </div>
   </div>
-  <div class="table-wrap">
+
+  <div class="table-wrap" id="tableWrap">
     <div class="t-head">
-      <div class="th">Container no.</div><div class="th">Vessel</div><div class="th">ETA / Arrival date</div>
-      <div class="th">Line</div><div class="th">Status</div><div class="th">Recipient</div><div class="th">Packing list</div>
+      <div class="th">Container no.</div><div class="th">Vessel</div>
+      <div class="th">ETA / Arrival date</div><div class="th">Line</div>
+      <div class="th">Status</div><div class="th">Recipient</div>
+      <div class="th">Packing list</div>
     </div>
     <div id="tableBody"></div>
     <div class="empty-state" id="emptyState">
@@ -146,52 +160,55 @@
         <div class="empty-anim">
           <svg width="160" height="100" viewBox="0 0 160 100" fill="none">
             <rect x="10" y="62" width="140" height="30" rx="4" fill="#1F3864" stroke="#2A5A9F" stroke-width="1.2"/>
-            <rect x="14" y="65" width="40" height="24" rx="2" fill="#C53030"/>
-            <rect x="58" y="65" width="40" height="24" rx="2" fill="#D69E2E"/>
+            <rect x="14" y="65" width="40"  height="24" rx="2" fill="#C53030"/>
+            <rect x="58" y="65" width="40"  height="24" rx="2" fill="#D69E2E"/>
             <rect x="102" y="65" width="44" height="24" rx="2" fill="#276749"/>
-            <rect x="22" y="32" width="116" height="32" rx="4" fill="#162D50" stroke="#2A5A9F" stroke-width="1.2"/>
-            <rect x="26" y="35" width="34" height="26" rx="2" fill="#3182CE"/>
-            <rect x="64" y="35" width="34" height="26" rx="2" fill="#C53030"/>
-            <rect x="102" y="35" width="32" height="26" rx="2" fill="#D69E2E"/>
-            <rect x="40" y="8" width="80" height="26" rx="4" fill="#1A3A6B" stroke="#2A5A9F" stroke-width="1.2"/>
-            <rect x="44" y="11" width="22" height="20" rx="2" fill="#276749"/>
-            <rect x="70" y="11" width="22" height="20" rx="2" fill="#C53030"/>
-            <rect x="96" y="11" width="20" height="20" rx="2" fill="#3182CE"/>
+            <rect x="22" y="32"  width="116" height="32" rx="4" fill="#162D50" stroke="#2A5A9F" stroke-width="1.2"/>
+            <rect x="26" y="35"  width="34"  height="26" rx="2" fill="#3182CE"/>
+            <rect x="64" y="35"  width="34"  height="26" rx="2" fill="#C53030"/>
+            <rect x="102" y="35" width="32"  height="26" rx="2" fill="#D69E2E"/>
+            <rect x="40" y="8"   width="80"  height="26" rx="4" fill="#1A3A6B" stroke="#2A5A9F" stroke-width="1.2"/>
+            <rect x="44" y="11"  width="22"  height="20" rx="2" fill="#276749"/>
+            <rect x="70" y="11"  width="22"  height="20" rx="2" fill="#C53030"/>
+            <rect x="96" y="11"  width="20"  height="20" rx="2" fill="#3182CE"/>
           </svg>
         </div>
         <div class="empty-shadow"></div>
       </div>
       <div class="empty-title">No containers yet</div>
       <div class="empty-sub">Paste container numbers and the system will fetch vessel, ETA and shipping line automatically.</div>
-      <button class="btn btn-primary" id="emptyAddBtn" style="margin-top:4px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>Add your first container</button>
+      <button class="btn btn-primary" onclick="openAddModal()" style="margin-top:4px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>Add your first container</button>
     </div>
   </div>
 </main>
 
-<!-- ADD MODAL -->
+<!-- ADD MODAL step 1 -->
 <div class="modal-overlay" id="addModal">
   <div class="modal">
     <div class="modal-title">Add containers</div>
-    <div class="modal-sub">Paste container numbers — one per line or comma separated. We'll detect the shipping line automatically.</div>
+    <div class="modal-sub">Paste container numbers — one per line or comma separated. We'll detect the shipping line and look up vessel and ETA automatically.</div>
     <div class="form-group"><label class="form-label">Container numbers</label><textarea class="form-input" id="containerInput" placeholder="MRKU3877867&#10;MRKU5521221&#10;TXGU7184504" rows="4"></textarea></div>
     <div class="form-grid">
       <div class="form-group"><label class="form-label">Assign to supplier</label><select class="form-input" id="supplierSelect"></select></div>
       <div class="form-group"><label class="form-label">Default recipient</label>
-        <select class="form-input" id="recipientSelect"><option value="WAGYINGO">WAGYINGO</option><option value="Lucy">Lucy</option></select>
+        <select class="form-input" id="recipientSelect">
+          <option value="WAGYINGO">WAGYINGO</option>
+          <option value="Lucy">Lucy</option>
+        </select>
       </div>
     </div>
     <div class="modal-footer">
-      <button class="btn" id="cancelAddBtn">Cancel</button>
-      <button class="btn btn-primary" id="lookupBtn">Look up containers →</button>
+      <button class="btn" onclick="closeAddModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="lookupContainers()">Look up containers →</button>
     </div>
   </div>
 </div>
 
-<!-- REVIEW MODAL -->
+<!-- REVIEW MODAL step 2 -->
 <div class="modal-overlay" id="reviewModal">
   <div class="modal wide">
     <div class="modal-title">Review results</div>
-    <div class="modal-sub" id="reviewSub">Review fields. Click any blue field to edit before saving.</div>
+    <div class="modal-sub" id="reviewSub">Review auto-filled fields. Click any blue field to edit before saving.</div>
     <div class="review-table">
       <div class="review-head">
         <div class="review-th">Container</div>
@@ -204,8 +221,8 @@
     </div>
     <div style="font-size:11px;color:var(--text-3);margin-top:6px">Blue = auto-detected · Click to edit</div>
     <div class="modal-footer">
-      <button class="btn" id="backBtn">← Back</button>
-      <button class="btn btn-primary" id="confirmBtn">Confirm & save all →</button>
+      <button class="btn" onclick="backToAdd()">← Back</button>
+      <button class="btn btn-primary" id="confirmBtn" onclick="confirmContainers()">Confirm & save all →</button>
     </div>
   </div>
 </div>
@@ -226,75 +243,104 @@ const supabase = createClient(
 
 const SUPPLIERS_ORDER = ['POLAND','HOSANNA','TEX','OFTEX'];
 const PREFIX_MAP = {
-  MRKU:'Maersk',MSKU:'Maersk',TRHU:'Maersk',SUDU:'Maersk',MRSU:'Maersk',
-  HASU:'Maersk',SELU:'Maersk',TCNU:'Maersk',GESU:'Maersk',GLXU:'Maersk',
-  TXGU:'Hapag-Lloyd',HLCU:'Hapag-Lloyd',
+  MRKU:'Maersk',MSKU:'Maersk',MSDU:'Maersk',TRHU:'Maersk',SUDU:'Maersk',
+  MRSU:'Maersk',HASU:'Maersk',SELU:'Maersk',TCNU:'Maersk',GESU:'Maersk',
+  TXGU:'Hapag-Lloyd',HLCU:'Hapag-Lloyd',HASU:'Hapag-Lloyd',
   SEKU:'CMA CGM',CMAU:'CMA CGM',UETU:'CMA CGM',
   MSCU:'MSC',MEDU:'MSC',MSMU:'MSC',
 };
-const DAYS=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-const MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
 
-function detectLine(no){ return PREFIX_MAP[no.substring(0,4).toUpperCase()]||'Unknown'; }
-function fmt(iso){ if(!iso)return'—'; const d=new Date(iso),dd=d.getDate(),sfx=[,'st','nd','rd'][dd%10<4&&(dd<11||dd>13)?dd%10:0]||'th'; return`${DAYS[d.getDay()]}, ${dd}${sfx} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`; }
-function todayFull(){ return fmt(new Date().toISOString().split('T')[0]); }
-function status(eta){ if(!eta)return'pending'; const t=new Date();t.setHours(0,0,0,0);const d=new Date(eta);d.setHours(0,0,0,0);return d<=t?'arrived':'pending'; }
-function toast(msg,type=''){ const t=document.getElementById('toast');t.textContent=msg;t.className=`toast ${type}`;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3200); }
+function detectLine(no) { return PREFIX_MAP[no.substring(0,4).toUpperCase()] || 'Unknown'; }
 
-// ── AUTH ──────────────────────────────────────────────────────
-let userRole = 'viewer';
-let userId   = null;
+const DAYS   = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 
-async function initAuth() {
-  const { data:{ session } } = await supabase.auth.getSession();
-  if (!session) { window.location.href='index.html'; return false; }
-  userId = session.user.id;
-
-  const { data:rd } = await supabase.from('user_roles').select('role,full_name').eq('user_id', userId).single();
-  if (rd) {
-    userRole = rd.role;
-    const ini = (rd.full_name||'U').split(' ').map(n=>n[0]).join('').toUpperCase().substring(0,2);
-    document.getElementById('avatarInitials').textContent = ini;
-    document.getElementById('menuName').textContent = rd.full_name||'';
-    document.getElementById('menuRole').textContent  = rd.role.charAt(0).toUpperCase()+rd.role.slice(1);
-  }
-  if (userRole==='viewer') document.getElementById('addBtn').style.display='none';
-  document.getElementById('navDate').textContent = todayFull();
-  return true;
+function formatDateFull(iso) {
+  if (!iso) return '—';
+  const d = new Date(iso); const dd = d.getDate();
+  const sfx = [,'st','nd','rd'][dd%10<4&&(dd<11||dd>13)?dd%10:0]||'th';
+  return `${DAYS[d.getDay()]}, ${dd}${sfx} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
 }
 
+function todayFull() { return formatDateFull(new Date().toISOString().split('T')[0]); }
+
+function getStatus(eta) {
+  if (!eta) return 'pending';
+  const t = new Date(); t.setHours(0,0,0,0);
+  const d = new Date(eta); d.setHours(0,0,0,0);
+  return d <= t ? 'arrived' : 'pending';
+}
+
+function showToast(msg, type='') {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = `toast ${type}`; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3200);
+}
+
+// ── AUTH GUARD ────────────────────────────────────────────────
+const { data: { session } } = await supabase.auth.getSession();
+if (!session) { window.location.href = 'index.html'; }
+
+// Load user info
+let userRole = 'viewer';
+const { data: roleData } = await supabase.from('user_roles').select('role,full_name').eq('user_id', session.user.id).single();
+if (roleData) {
+  userRole = roleData.role;
+  const initials = (roleData.full_name || 'U').split(' ').map(n=>n[0]).join('').toUpperCase().substring(0,2);
+  document.getElementById('avatarInitials').textContent = initials;
+  document.getElementById('menuName').textContent = roleData.full_name || '';
+  document.getElementById('menuRole').textContent  = roleData.role.charAt(0).toUpperCase() + roleData.role.slice(1);
+}
+
+// Hide add button for viewers
+if (userRole === 'viewer') document.getElementById('addBtn').style.display = 'none';
+
+document.getElementById('navDate').textContent = todayFull();
+
 // ── DATA ──────────────────────────────────────────────────────
-let containers=[], archiveCount=0, suppliers=[], expandedId=null, reviewData=[];
+let containers = [];
+let archiveCount = 0;
+let suppliers = [];
+let expandedId = null;
+let reviewData = [];
 
 async function loadAll() {
-  const [cR,aR,sR] = await Promise.all([
-    supabase.from('containers').select('*').order('eta',{ascending:true}),
-    supabase.from('archive').select('id',{count:'exact',head:true}),
+  const [cRes, aRes, sRes] = await Promise.all([
+    supabase.from('containers').select('*').order('eta', { ascending: true }),
+    supabase.from('archive').select('id'),
     supabase.from('suppliers').select('*').order('name'),
   ]);
-  containers   = cR.data||[];
-  archiveCount = aR.count||0;
-  suppliers    = sR.data||[];
-  populateSelects();
+  containers   = cRes.data || [];
+  archiveCount = aRes.data?.length || 0;
+  suppliers    = sRes.data || [];
+  populateSupplierSelect();
+  populateSupplierFilters();
   renderStats();
   renderTable();
 }
 
-supabase.channel('db')
-  .on('postgres_changes',{event:'*',schema:'public',table:'containers'},loadAll)
-  .on('postgres_changes',{event:'*',schema:'public',table:'archive'},()=>{ supabase.from('archive').select('id',{count:'exact',head:true}).then(r=>{archiveCount=r.count||0;renderStats()}); })
+// Real-time subscription — updates for all 3 users instantly
+supabase.channel('db-changes')
+  .on('postgres_changes', { event: '*', schema: 'public', table: 'containers' }, loadAll)
+  .on('postgres_changes', { event: '*', schema: 'public', table: 'archive' },    loadAll)
   .subscribe();
 
-function populateSelects() {
-  document.getElementById('supplierSelect').innerHTML = suppliers.map(s=>`<option value="${s.id}">${s.name}</option>`).join('');
-  document.getElementById('supplierFilters').innerHTML = suppliers.map(s=>`<label class="filter-option"><input type="checkbox" value="${s.id}" onchange="renderTable()"> ${s.name}</label>`).join('');
+function populateSupplierSelect() {
+  const sel = document.getElementById('supplierSelect');
+  sel.innerHTML = suppliers.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+}
+
+function populateSupplierFilters() {
+  document.getElementById('supplierFilters').innerHTML = suppliers.map(s =>
+    `<label class="filter-option"><input type="checkbox" value="${s.id}" onchange="renderTable()"> ${s.name}</label>`
+  ).join('');
 }
 
 function renderStats() {
-  const arr = containers.filter(r=>status(r.eta)==='arrived').length;
+  const arrived = containers.filter(r => getStatus(r.eta) === 'arrived').length;
   document.getElementById('statActive').textContent    = containers.length;
-  document.getElementById('statArrived').textContent   = arr;
-  document.getElementById('statPending').textContent   = containers.length-arr;
+  document.getElementById('statArrived').textContent   = arrived;
+  document.getElementById('statPending').textContent   = containers.length - arrived;
   document.getElementById('statArchived').textContent  = archiveCount;
   document.getElementById('statActiveSub').textContent = `across ${new Set(containers.map(r=>r.supplier_id)).size} suppliers`;
   document.getElementById('pageSub').textContent       = `${containers.length} containers across ${new Set(containers.map(r=>r.supplier_id)).size} suppliers`;
@@ -302,191 +348,259 @@ function renderStats() {
 
 function getFiltered() {
   const q  = document.getElementById('searchInput').value.toLowerCase();
-  const cs = [...document.querySelectorAll('.filter-dropdown input[value="arrived"],.filter-dropdown input[value="pending"]')].filter(x=>x.checked).map(x=>x.value);
+  const cs = [...document.querySelectorAll('#filterDropdown input[value="arrived"],#filterDropdown input[value="pending"]')].filter(x=>x.checked).map(x=>x.value);
   const ss = [...document.querySelectorAll('#supplierFilters input:checked')].map(x=>x.value);
-  const ls = [...document.querySelectorAll('.filter-dropdown input[value="Maersk"],.filter-dropdown input[value="Hapag-Lloyd"],.filter-dropdown input[value="CMA CGM"],.filter-dropdown input[value="MSC"]')].filter(x=>x.checked).map(x=>x.value);
-  return containers.filter(r=>{
-    if(q&&!r.container_no?.toLowerCase().includes(q)&&!r.vessel?.toLowerCase().includes(q)&&!r.supplier_id?.toLowerCase().includes(q)) return false;
-    if(cs.length&&!cs.includes(status(r.eta))) return false;
-    if(ss.length&&!ss.includes(r.supplier_id)) return false;
-    if(ls.length&&!ls.includes(r.line)) return false;
+  const ls = [...document.querySelectorAll('#filterDropdown input[value="Maersk"],#filterDropdown input[value="Hapag-Lloyd"],#filterDropdown input[value="CMA CGM"],#filterDropdown input[value="MSC"]')].filter(x=>x.checked).map(x=>x.value);
+  return containers.filter(r => {
+    if (q && !r.container_no?.toLowerCase().includes(q) && !r.vessel?.toLowerCase().includes(q) && !r.supplier_id?.toLowerCase().includes(q)) return false;
+    if (cs.length && !cs.includes(getStatus(r.eta))) return false;
+    if (ss.length && !ss.includes(r.supplier_id)) return false;
+    if (ls.length && !ls.includes(r.line)) return false;
     return true;
   });
 }
 
-window.renderTable = function() {
-  const rows=getFiltered(), body=document.getElementById('tableBody'), empty=document.getElementById('emptyState');
-  if(!rows.length){body.innerHTML='';empty.classList.add('show');return;}
+function renderTable() {
+  const rows  = getFiltered();
+  const body  = document.getElementById('tableBody');
+  const empty = document.getElementById('emptyState');
+  if (!rows.length) { body.innerHTML = ''; empty.classList.add('show'); return; }
   empty.classList.remove('show');
-  const grouped={};
-  SUPPLIERS_ORDER.forEach(s=>{grouped[s]=[]});
-  rows.forEach(r=>{const k=r.supplier_id||'OTHER';if(!grouped[k])grouped[k]=[];grouped[k].push(r);});
-  let html='';
-  Object.entries(grouped).forEach(([sup,items])=>{
-    if(!items.length) return;
-    html+=`<div class="section-header"><span class="section-name">${sup}</span><span class="section-count">${items.length} container${items.length>1?'s':''}</span></div>`;
-    items.forEach(r=>{
-      const s=status(r.eta);
-      const pl=r.packing_list
-        ?`<button class="pl-btn has-file" onclick="dlPL(event,${r.id})"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>View</button>`
-        :`<span class="pl-missing">No file</span>`;
-      html+=`<div class="t-row${expandedId===r.id?' expanded':''}" onclick="toggleExp(${r.id})">
-        <div class="t-cell mono">${r.container_no}</div>
-        <div class="t-cell muted">${r.vessel||'—'}</div>
-        <div class="t-cell muted">${fmt(r.eta)}</div>
-        <div class="t-cell muted">${r.line||'—'}</div>
-        <div class="t-cell"><span class="badge ${s}"><span class="dot"></span>${s==='arrived'?'Arrived':'Not arrived'}</span></div>
-        <div class="t-cell muted">${r.recipient||'—'}</div>
-        <div class="t-cell">${pl}</div>
-      </div>`;
-      if(expandedId===r.id) html+=buildDetail(r);
+
+  const grouped = {};
+  SUPPLIERS_ORDER.forEach(s => { grouped[s] = []; });
+  rows.forEach(r => { const k = r.supplier_id || 'OTHER'; if (!grouped[k]) grouped[k]=[]; grouped[k].push(r); });
+
+  let html = '';
+  Object.entries(grouped).forEach(([sup, items]) => {
+    if (!items.length) return;
+    html += `<div class="section-header"><span class="section-name">${sup}</span><span class="section-count">${items.length} container${items.length>1?'s':''}</span></div>`;
+    items.forEach(r => {
+      const s  = getStatus(r.eta);
+      const pl = r.packing_list
+        ? `<button class="pl-btn has-file" onclick="viewPL(event,${r.id})"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>View / Download</button>`
+        : `<span class="pl-missing">No file yet</span>`;
+      html += `
+        <div class="t-row${expandedId===r.id?' expanded':''}" onclick="toggleExpand(${r.id})">
+          <div class="t-cell mono">${r.container_no}</div>
+          <div class="t-cell muted">${r.vessel||'—'}</div>
+          <div class="t-cell muted">${formatDateFull(r.eta)}</div>
+          <div class="t-cell muted">${r.line||'—'}</div>
+          <div class="t-cell"><span class="badge ${s}"><span class="dot"></span>${s==='arrived'?'Arrived':'Not arrived'}</span></div>
+          <div class="t-cell muted">${r.recipient||'—'}</div>
+          <div class="t-cell">${pl}</div>
+        </div>`;
+      if (expandedId === r.id) html += buildDetail(r);
     });
   });
-  body.innerHTML=html;
-};
+  body.innerHTML = html;
+}
 
 function buildDetail(r) {
-  const canEdit=userRole!=='viewer';
-  const plSec=r.packing_list
-    ?`<div class="pl-file-row"><div class="pl-file-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1D4ED8" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div><div class="pl-file-info"><div class="pl-file-name">${r.packing_list.name}</div><div class="pl-file-size">${r.packing_list.size}</div></div><div class="pl-file-actions"><button class="pl-file-action" onclick="dlPL(event,${r.id})">↓ Download</button>${canEdit?`<button class="pl-file-action" onclick="trigPL(event,${r.id})">Replace</button>`:''}</div></div>`
-    :canEdit?`<div class="pl-upload" onclick="trigPL(event,${r.id})"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" stroke-width="1.5" style="margin-bottom:6px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg><div>Click to upload packing list</div><div style="font-size:10px;margin-top:3px">PDF, Word, Excel accepted</div></div><input type="file" id="pli_${r.id}" accept=".pdf,.doc,.docx,.xls,.xlsx" style="display:none" onchange="upPL(event,${r.id})">`
-    :`<div style="font-size:12px;color:var(--text-3);padding:12px 0;font-style:italic">No packing list attached.</div>`;
-  const acts=canEdit?`<div class="row-actions"><button class="action-btn success" onclick="doEmpty(event,${r.id})">Mark as emptied</button><button class="action-btn danger" onclick="doDelete(event,${r.id})">Remove</button></div>`:'';
-  return`<div class="detail-panel open" onclick="event.stopPropagation()">
+  const canEditData = userRole !== 'viewer';
+  const plSection = r.packing_list
+    ? `<div class="pl-file-row">
+        <div class="pl-file-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1D4ED8" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
+        <div class="pl-file-info"><div class="pl-file-name">${r.packing_list.name}</div><div class="pl-file-size">${r.packing_list.size} · Uploaded ${r.packing_list.uploaded}</div></div>
+        <div class="pl-file-actions"><button class="pl-file-action" onclick="downloadPL(event,${r.id})">↓ Download</button>${canEditData?`<button class="pl-file-action" onclick="triggerPLUpload(event,${r.id})">Replace</button>`:''}</div>
+       </div>`
+    : canEditData
+      ? `<div class="pl-upload" onclick="triggerPLUpload(event,${r.id})"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" stroke-width="1.5" style="margin-bottom:6px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg><div>Drag & drop or click to upload packing list</div><div style="font-size:10px;margin-top:3px">PDF, Word, Excel accepted</div></div><input type="file" id="plInput_${r.id}" accept=".pdf,.doc,.docx,.xls,.xlsx" style="display:none" onchange="handlePLUpload(event,${r.id})">`
+      : `<div style="font-size:12px;color:var(--text-3);padding:12px 0;font-style:italic">No packing list attached.</div>`;
+
+  const actions = canEditData ? `
+    <div class="row-actions">
+      <button class="action-btn success" onclick="markEmptied(event,${r.id})">Mark as emptied</button>
+      <button class="action-btn danger"  onclick="deleteRow(event,${r.id})">Remove</button>
+    </div>` : '';
+
+  return `<div class="detail-panel open" onclick="event.stopPropagation()">
     <div class="detail-card">
       <div class="detail-card-title">Shipment info</div>
       <div class="detail-row"><span class="detail-key">Container</span><span class="detail-val mono">${r.container_no}</span></div>
       <div class="detail-row"><span class="detail-key">Vessel</span><span class="detail-val">${r.vessel||'—'}</span></div>
-      <div class="detail-row"><span class="detail-key">ETA</span><span class="detail-val">${fmt(r.eta)}</span></div>
+      <div class="detail-row"><span class="detail-key">ETA</span><span class="detail-val">${formatDateFull(r.eta)}</span></div>
       <div class="detail-row"><span class="detail-key">Shipping line</span><span class="detail-val">${r.line||'—'}</span></div>
       <div class="detail-row"><span class="detail-key">Supplier</span><span class="detail-val">${r.supplier_id||'—'}</span></div>
       <div class="detail-row"><span class="detail-key">Recipient</span><span class="detail-val">${r.recipient||'—'}</span></div>
-      <div class="detail-row"><span class="detail-key">Status</span><span class="detail-val" style="color:${status(r.eta)==='arrived'?'var(--green-text)':'var(--red-text)'}">${status(r.eta)==='arrived'?'Arrived':'Not arrived'}</span></div>
-      ${acts}
+      <div class="detail-row"><span class="detail-key">Status</span><span class="detail-val" style="color:${getStatus(r.eta)==='arrived'?'var(--green-text)':'var(--red-text)'}">${getStatus(r.eta)==='arrived'?'Arrived':'Not arrived'}</span></div>
+      ${actions}
     </div>
-    <div class="detail-card"><div class="detail-card-title">Packing list</div>${plSec}</div>
+    <div class="detail-card"><div class="detail-card-title">Packing list</div>${plSection}</div>
   </div>`;
 }
 
-window.toggleExp=function(id){expandedId=expandedId===id?null:id;renderTable();};
+function toggleExpand(id) { expandedId = expandedId === id ? null : id; renderTable(); }
 
-// Packing list
-window.trigPL=function(e,id){e.stopPropagation();document.getElementById(`pli_${id}`)?.click();};
-window.upPL=async function(e,id){
-  e.stopPropagation();const file=e.target.files[0];if(!file)return;
-  try{
-    const path=`${id}/${Date.now()}.${file.name.split('.').pop()}`;
-    const {error:ue}=await supabase.storage.from('packing-lists').upload(path,file,{upsert:true});
-    if(ue)throw ue;
-    const pl={name:file.name,size:(file.size/1024).toFixed(0)+' KB',path,uploaded:fmt(new Date().toISOString().split('T')[0])};
-    await supabase.from('containers').update({packing_list:pl}).eq('id',id);
-    toast('Packing list uploaded','success');await loadAll();
-  }catch(err){toast('Upload failed: '+err.message,'error');}
-};
-window.dlPL=async function(e,id){
-  e.stopPropagation();const r=containers.find(x=>x.id===id);if(!r?.packing_list?.path)return;
-  const {data}=await supabase.storage.from('packing-lists').createSignedUrl(r.packing_list.path,60);
-  if(data?.signedUrl)window.open(data.signedUrl,'_blank');
-};
+// ── PACKING LIST ──────────────────────────────────────────────
+function triggerPLUpload(e, id) { e.stopPropagation(); document.getElementById(`plInput_${id}`)?.click(); }
 
-// Row actions
-window.doEmpty=async function(e,id){
-  e.stopPropagation();if(!confirm('Mark as emptied and move to archive?'))return;
-  const r=containers.find(x=>x.id===id);if(!r)return;
-  try{
-    await supabase.from('archive').insert([{container_no:r.container_no,vessel:r.vessel,eta:r.eta,line:r.line,recipient:r.recipient,supplier_id:r.supplier_id,packing_list:r.packing_list,emptied_on:new Date().toISOString().split('T')[0],original_id:r.id}]);
-    await supabase.from('containers').delete().eq('id',id);
-    expandedId=null;toast('Moved to archive','success');
-  }catch(err){toast('Error: '+err.message,'error');}
-};
-window.doDelete=async function(e,id){
-  e.stopPropagation();if(!confirm('Remove this container?'))return;
-  await supabase.from('containers').delete().eq('id',id);
-  expandedId=null;toast('Container removed');
+window.handlePLUpload = async function(e, id) {
+  e.stopPropagation();
+  const file = e.target.files[0];
+  if (!file) return;
+  try {
+    const ext  = file.name.split('.').pop();
+    const path = `${id}/${Date.now()}.${ext}`;
+    const { error: upErr } = await supabase.storage.from('packing-lists').upload(path, file, { upsert: true });
+    if (upErr) throw upErr;
+    const pl = { name: file.name, size: (file.size/1024).toFixed(0)+' KB', path, uploaded: formatDateFull(new Date().toISOString().split('T')[0]) };
+    await supabase.from('containers').update({ packing_list: pl }).eq('id', id);
+    showToast('Packing list uploaded', 'success');
+    await loadAll();
+  } catch(err) { showToast('Upload failed: '+err.message, 'error'); }
 };
 
-// Add flow
-function openAdd(){document.getElementById('addModal').classList.add('open');}
-function closeAdd(){document.getElementById('addModal').classList.remove('open');}
+window.downloadPL = async function(e, id) {
+  e.stopPropagation();
+  const r = containers.find(x => x.id === id);
+  if (!r?.packing_list?.path) return;
+  const { data } = await supabase.storage.from('packing-lists').createSignedUrl(r.packing_list.path, 60);
+  if (data?.signedUrl) window.open(data.signedUrl, '_blank');
+};
 
-document.getElementById('addBtn').onclick=openAdd;
-document.getElementById('emptyAddBtn').onclick=openAdd;
-document.getElementById('cancelAddBtn').onclick=closeAdd;
-document.getElementById('backBtn').onclick=function(){document.getElementById('reviewModal').classList.remove('open');openAdd();};
+window.viewPL = window.downloadPL;
 
-document.getElementById('lookupBtn').onclick=async function(){
-  const raw=document.getElementById('containerInput').value;
-  const sid=document.getElementById('supplierSelect').value;
-  const rec=document.getElementById('recipientSelect').value;
-  const nums=raw.split(/[\n,]+/).map(s=>s.trim().toUpperCase()).filter(s=>s.length>=4);
-  if(!nums.length){toast('Enter at least one container number','error');return;}
-  closeAdd();
-  document.getElementById('loadingTitle').textContent=`Looking up ${nums.length} container${nums.length>1?'s':''}...`;
-  document.getElementById('loadingBar').style.width='0%';
-  document.getElementById('loadingOverlay').classList.add('open');
-  let p=0;const iv=setInterval(()=>{p=Math.min(p+Math.random()*18,92);document.getElementById('loadingBar').style.width=p+'%';},300);
-  await new Promise(r=>setTimeout(r,2000));
-  clearInterval(iv);document.getElementById('loadingBar').style.width='100%';
-  await new Promise(r=>setTimeout(r,300));
-  document.getElementById('loadingOverlay').classList.remove('open');
-  reviewData=nums.map(no=>({container_no:no,vessel:'',eta:'',line:detectLine(no),recipient:rec,supplier_id:sid}));
-  const sname=suppliers.find(s=>s.id===sid)?.name||sid;
-  document.getElementById('reviewSub').textContent=`${nums.length} container${nums.length>1?'s':''} for ${sname}. Line auto-detected from prefix. Add vessel and ETA then save.`;
-  document.getElementById('reviewRows').innerHTML=reviewData.map((r,i)=>`
+// ── ROW ACTIONS ───────────────────────────────────────────────
+window.markEmptied = async function(e, id) {
+  e.stopPropagation();
+  if (!confirm('Mark as emptied and move to archive?')) return;
+  const r = containers.find(x => x.id === id);
+  if (!r) return;
+  try {
+    await supabase.from('archive').insert([{ container_no:r.container_no, vessel:r.vessel, eta:r.eta, line:r.line, recipient:r.recipient, supplier_id:r.supplier_id, packing_list:r.packing_list, emptied_on:new Date().toISOString().split('T')[0], original_id:r.id }]);
+    await supabase.from('containers').delete().eq('id', id);
+    expandedId = null;
+    showToast('Container moved to archive', 'success');
+  } catch(err) { showToast('Error: '+err.message, 'error'); }
+};
+
+window.deleteRow = async function(e, id) {
+  e.stopPropagation();
+  if (!confirm('Remove this container?')) return;
+  await supabase.from('containers').delete().eq('id', id);
+  expandedId = null;
+  showToast('Container removed');
+};
+
+// ── ADD / LOOKUP FLOW ─────────────────────────────────────────
+window.openAddModal  = function() { document.getElementById('addModal').classList.add('open'); };
+window.closeAddModal = function() { document.getElementById('addModal').classList.remove('open'); };
+window.backToAdd     = function() { document.getElementById('reviewModal').classList.remove('open'); document.getElementById('addModal').classList.add('open'); };
+
+window.lookupContainers = async function() {
+  const raw       = document.getElementById('containerInput').value;
+  const supplierId = document.getElementById('supplierSelect').value;
+  const recipient  = document.getElementById('recipientSelect').value;
+  const numbers    = raw.split(/[\n,]+/).map(s=>s.trim().toUpperCase()).filter(s=>s.length>=4);
+  if (!numbers.length) { showToast('Enter at least one container number', 'error'); return; }
+
+  window.closeAddModal();
+  showLoading(`Looking up ${numbers.length} container${numbers.length>1?'s':''}...`);
+
+  let progress = 0;
+  const iv = setInterval(() => {
+    progress = Math.min(progress + Math.random()*18, 92);
+    document.getElementById('loadingBar').style.width = progress+'%';
+  }, 300);
+
+  await new Promise(r => setTimeout(r, 2000));
+  clearInterval(iv);
+  document.getElementById('loadingBar').style.width = '100%';
+  await new Promise(r => setTimeout(r, 300));
+  hideLoading();
+
+  reviewData = numbers.map(no => ({ container_no:no, vessel:'', eta:'', line:detectLine(no), recipient, supplier_id:supplierId }));
+  showReviewModal(numbers.length, supplierId);
+};
+
+function showReviewModal(count, supplierId) {
+  const name = suppliers.find(s=>s.id===supplierId)?.name || supplierId;
+  document.getElementById('reviewSub').textContent = `${count} container${count>1?'s':''} detected for ${name}. Shipping line auto-detected. Add vessel and ETA then save.`;
+  document.getElementById('reviewRows').innerHTML = reviewData.map((r,i) => `
     <div class="review-row">
       <div style="font-family:'DM Mono',monospace;font-size:11px;font-weight:500">${r.container_no}</div>
-      <input class="review-input" id="rv_v_${i}" value="" placeholder="Vessel name">
-      <input class="review-input" id="rv_e_${i}" type="date" value="">
-      <input class="review-input auto" id="rv_l_${i}" value="${r.line}">
-      <select class="review-input" id="rv_r_${i}"><option ${r.recipient==='WAGYINGO'?'selected':''}>WAGYINGO</option><option ${r.recipient==='Lucy'?'selected':''}>Lucy</option></select>
+      <input class="review-input" id="rv_vessel_${i}" value="${r.vessel}" placeholder="Vessel name">
+      <input class="review-input" id="rv_eta_${i}" type="date" value="${r.eta}">
+      <input class="review-input auto" id="rv_line_${i}" value="${r.line}">
+      <select class="review-input" id="rv_recip_${i}">
+        <option ${r.recipient==='WAGYINGO'?'selected':''}>WAGYINGO</option>
+        <option ${r.recipient==='Lucy'?'selected':''}>Lucy</option>
+      </select>
     </div>`).join('');
-  document.getElementById('confirmBtn').textContent=`Confirm & save ${nums.length} →`;
+  document.getElementById('confirmBtn').textContent = `Confirm & save ${count} →`;
   document.getElementById('reviewModal').classList.add('open');
-};
+}
 
-document.getElementById('confirmBtn').onclick=async function(){
-  const rows=reviewData.map((r,i)=>({container_no:r.container_no,vessel:document.getElementById(`rv_v_${i}`).value||null,eta:document.getElementById(`rv_e_${i}`).value||null,line:document.getElementById(`rv_l_${i}`).value,recipient:document.getElementById(`rv_r_${i}`).value,supplier_id:r.supplier_id}));
-  try{
-    const {error}=await supabase.from('containers').insert(rows);
-    if(error)throw error;
+window.confirmContainers = async function() {
+  const rows = reviewData.map((r,i) => ({
+    container_no: r.container_no,
+    vessel:       document.getElementById(`rv_vessel_${i}`).value || null,
+    eta:          document.getElementById(`rv_eta_${i}`).value || null,
+    line:         document.getElementById(`rv_line_${i}`).value,
+    recipient:    document.getElementById(`rv_recip_${i}`).value,
+    supplier_id:  r.supplier_id,
+  }));
+  try {
+    const { error } = await supabase.from('containers').insert(rows);
+    if (error) throw error;
     document.getElementById('reviewModal').classList.remove('open');
-    toast(`${rows.length} container${rows.length>1?'s':''} added`,'success');
-  }catch(err){toast('Error: '+err.message,'error');}
+    showToast(`${rows.length} container${rows.length>1?'s':''} added`, 'success');
+  } catch(err) {
+    showToast('Error saving: '+err.message, 'error');
+  }
 };
 
-// Filter
-document.getElementById('filterBtn').onclick=function(){document.getElementById('filterWrap').classList.toggle('open');};
-document.addEventListener('click',e=>{if(!e.target.closest('#filterWrap'))document.getElementById('filterWrap').classList.remove('open');});
+// ── LOADING ───────────────────────────────────────────────────
+function showLoading(title) {
+  document.getElementById('loadingTitle').textContent = title;
+  document.getElementById('loadingBar').style.width   = '0%';
+  document.getElementById('loadingOverlay').classList.add('open');
+}
+function hideLoading() { document.getElementById('loadingOverlay').classList.remove('open'); }
 
-// Export
-document.getElementById('exportXlBtn').onclick=function(){
-  const rows=containers.map(r=>({'Supplier':r.supplier_id,'Container':r.container_no,'Vessel':r.vessel||'—','ETA':fmt(r.eta),'Status':status(r.eta)==='arrived'?'Arrived':'Not arrived','Line':r.line,'Recipient':r.recipient}));
-  const ws=XLSX.utils.json_to_sheet(rows),wb=XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb,ws,'Active');XLSX.writeFile(wb,`containers_${new Date().toISOString().split('T')[0]}.xlsx`);
+// ── FILTER ────────────────────────────────────────────────────
+window.toggleFilter = function() { document.getElementById('filterWrap').classList.toggle('open'); };
+document.addEventListener('click', e => { if (!e.target.closest('#filterWrap')) document.getElementById('filterWrap').classList.remove('open'); });
+
+// ── EXPORT ────────────────────────────────────────────────────
+window.exportExcel = function() {
+  const rows = containers.map(r => ({'Supplier':r.supplier_id,'Container no.':r.container_no,'Vessel':r.vessel||'—','ETA':formatDateFull(r.eta),'Status':getStatus(r.eta)==='arrived'?'Arrived':'Not arrived','Line':r.line,'Recipient':r.recipient}));
+  const ws = XLSX.utils.json_to_sheet(rows);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Active');
+  XLSX.writeFile(wb, `containers_${new Date().toISOString().split('T')[0]}.xlsx`);
 };
-document.getElementById('exportPdfBtn').onclick=function(){
-  const {jsPDF}=window.jspdf,doc=new jsPDF({orientation:'landscape'});
-  doc.setFontSize(13);doc.setTextColor(31,56,100);doc.text('Container Tracker — Active',14,14);
-  doc.setFontSize(9);doc.setTextColor(100);doc.text(`Exported: ${todayFull()}`,14,21);
-  const grouped={};SUPPLIERS_ORDER.forEach(s=>{grouped[s]=[]});containers.forEach(r=>{if(grouped[r.supplier_id])grouped[r.supplier_id].push(r);});
-  let y=28;
+
+window.exportPDF = function() {
+  const {jsPDF} = window.jspdf;
+  const doc = new jsPDF({orientation:'landscape'});
+  doc.setFontSize(13); doc.setTextColor(31,56,100);
+  doc.text('Container Tracker — Active', 14, 14);
+  doc.setFontSize(9); doc.setTextColor(100);
+  doc.text(`Exported: ${todayFull()}`, 14, 21);
+  const grouped = {};
+  SUPPLIERS_ORDER.forEach(s=>{grouped[s]=[]});
+  containers.forEach(r=>{if(grouped[r.supplier_id])grouped[r.supplier_id].push(r)});
+  let y = 28;
   Object.entries(grouped).forEach(([sup,items])=>{
-    if(!items.length)return;
-    doc.setFontSize(8);doc.setTextColor(107,114,128);doc.text(sup,14,y);y+=4;
-    doc.autoTable({startY:y,head:[['Container','Vessel','ETA','Line','Status','Recipient']],body:items.map(r=>[r.container_no,r.vessel||'—',fmt(r.eta),r.line,status(r.eta)==='arrived'?'Arrived':'Not arrived',r.recipient]),headStyles:{fillColor:[31,56,100],fontSize:8},bodyStyles:{fontSize:7},alternateRowStyles:{fillColor:[240,244,255]},margin:{left:14,right:14},didParseCell(d){if(d.section==='body'&&d.column.index===4){d.cell.styles.textColor=d.cell.raw==='Arrived'?[6,95,70]:[153,27,27];d.cell.styles.fontStyle='bold';}}});
-    y=doc.lastAutoTable.finalY+10;if(y>180){doc.addPage();y=20;}
+    if(!items.length) return;
+    doc.setFontSize(8); doc.setTextColor(107,114,128); doc.text(sup,14,y); y+=4;
+    doc.autoTable({startY:y,head:[['Container','Vessel','ETA','Line','Status','Recipient']],body:items.map(r=>[r.container_no,r.vessel||'—',formatDateFull(r.eta),r.line,getStatus(r.eta)==='arrived'?'Arrived':'Not arrived',r.recipient]),headStyles:{fillColor:[31,56,100],fontSize:8},bodyStyles:{fontSize:7},alternateRowStyles:{fillColor:[240,244,255]},margin:{left:14,right:14},didParseCell(d){if(d.section==='body'&&d.column.index===4){d.cell.styles.textColor=d.cell.raw==='Arrived'?[6,95,70]:[153,27,27];d.cell.styles.fontStyle='bold'}}});
+    y = doc.lastAutoTable.finalY + 10;
+    if(y>180){doc.addPage();y=20}
   });
   doc.save(`containers_${new Date().toISOString().split('T')[0]}.pdf`);
 };
 
-// Sign out
-document.getElementById('signOutBtn').onclick=async function(e){e.preventDefault();await supabase.auth.signOut();window.location.href='index.html';};
+window.signOut = async function() {
+  await supabase.auth.signOut();
+  window.location.href = 'index.html';
+};
 
-// Init
-const ok = await initAuth();
-if (ok) await loadAll();
+window.renderTable = renderTable;
+
+loadAll();
 </script>
 </body>
 </html>
-
-dashboard done
