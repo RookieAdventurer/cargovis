@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Container Tracker — Sign in</title>
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+<div class="login-page">
+
+  <!-- Twinkling stars -->
+  <div class="stars" id="stars"></div>
+
+  <!-- Login card -->
+  <div class="login-card">
+    <div class="login-icon">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#1F3864" stroke-width="2">
+        <rect x="1" y="3" width="15" height="13" rx="1"/>
+        <path d="M16 8h4l3 3v5h-7V8z"/>
+        <circle cx="5.5" cy="18.5" r="2.5"/>
+        <circle cx="18.5" cy="18.5" r="2.5"/>
+      </svg>
+    </div>
+    <div class="login-title">Container Tracker</div>
+    <div class="login-tagline">Authorised access only</div>
+
+    <div class="login-error" id="loginError"></div>
+
+    <input
+      type="password"
+      class="login-input"
+      id="passwordInput"
+      placeholder="Enter password"
+      autocomplete="current-password"
+    />
+
+    <button class="login-btn" id="loginBtn" onclick="handleLogin()">
+      Sign in
+    </button>
+
+    <div class="login-note">One password for your team. Contact the admin if you don't have it.</div>
+  </div>
+
+  <!-- Ocean waves -->
+  <div class="ocean">
+    <svg class="wave wave-back" viewBox="0 0 1400 80" preserveAspectRatio="none">
+      <path d="M0 40 Q87.5 10 175 40 Q262.5 70 350 40 Q437.5 10 525 40 Q612.5 70 700 40 Q787.5 10 875 40 Q962.5 70 1050 40 Q1137.5 10 1225 40 Q1312.5 70 1400 40 L1400 80 L0 80 Z" fill="#0D2B5E" opacity="0.9"/>
+    </svg>
+    <svg class="wave wave-front" viewBox="0 0 1400 60" preserveAspectRatio="none">
+      <path d="M0 30 Q87.5 5 175 30 Q262.5 55 350 30 Q437.5 5 525 30 Q612.5 55 700 30 Q787.5 5 875 30 Q962.5 55 1050 30 Q1137.5 5 1225 30 Q1312.5 55 1400 30 L1400 60 L0 60 Z" fill="#1F3864" opacity="0.95"/>
+    </svg>
+  </div>
+
+  <!-- Sailing ship -->
+  <div class="ship-track">
+    <div class="ship-wrap">
+      <svg width="220" height="90" viewBox="0 0 220 90" fill="none">
+        <polygon points="10,70 210,70 190,85 30,85" fill="#0F2347" stroke="#1F3864" stroke-width="1"/>
+        <rect x="20" y="44" width="170" height="28" rx="3" fill="#1A3A6B" stroke="#2A5A9F" stroke-width="1"/>
+        <rect x="25" y="48" width="30" height="20" rx="2" fill="#E53E3E"/>
+        <rect x="59" y="48" width="30" height="20" rx="2" fill="#1F3864" stroke="#93C5FD" stroke-width="0.5"/>
+        <rect x="93" y="48" width="30" height="20" rx="2" fill="#D69E2E"/>
+        <rect x="127" y="48" width="30" height="20" rx="2" fill="#E53E3E"/>
+        <rect x="161" y="48" width="22" height="20" rx="2" fill="#276749"/>
+        <rect x="60" y="28" width="100" height="18" rx="2" fill="#162D50" stroke="#2A5A9F" stroke-width="0.8"/>
+        <rect x="65" y="32" width="22" height="11" rx="1" fill="#E53E3E"/>
+        <rect x="91" y="32" width="22" height="11" rx="1" fill="#1F3864" stroke="#93C5FD" stroke-width="0.5"/>
+        <rect x="117" y="32" width="22" height="11" rx="1" fill="#D69E2E"/>
+        <rect x="143" y="32" width="14" height="11" rx="1" fill="#276749"/>
+        <rect x="95" y="8" width="6" height="22" fill="#4A7FBF"/>
+        <path d="M101 8 L130 18 L101 28 Z" fill="rgba(255,255,255,0.15)" stroke="rgba(255,255,255,0.3)" stroke-width="0.5"/>
+        <rect x="8" y="55" width="6" height="15" rx="1" fill="#4A7FBF"/>
+        <circle cx="8" cy="54" r="3" fill="#FCD34D" opacity="0.9"/>
+        <rect x="206" y="62" width="5" height="8" rx="1" fill="#FCA5A5" opacity="0.8"/>
+        <line x1="20" y1="70" x2="200" y2="70" stroke="#2A5A9F" stroke-width="0.5"/>
+        <line x1="58" y1="44" x2="58" y2="70" stroke="#2A5A9F" stroke-width="0.5"/>
+        <line x1="92" y1="44" x2="92" y2="70" stroke="#2A5A9F" stroke-width="0.5"/>
+        <line x1="126" y1="44" x2="126" y2="70" stroke="#2A5A9F" stroke-width="0.5"/>
+        <line x1="160" y1="44" x2="160" y2="70" stroke="#2A5A9F" stroke-width="0.5"/>
+      </svg>
+      <div class="ship-smoke" style="position:absolute; top:6px; left:94px;">
+        <span style="width:12px;height:12px;animation-delay:0s;"></span>
+        <span style="width:9px;height:9px;animation-delay:0.45s; top:0; left:3px;"></span>
+        <span style="width:11px;height:11px;animation-delay:0.85s; top:0; left:-2px;"></span>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script src="js/auth.js"></script>
+<script>
+  // Generate random twinkling stars
+  (function generateStars() {
+    const container = document.getElementById('stars');
+    const positions = [
+      [7, 12], [20, 24], [50, 10], [68, 36], [83, 18],
+      [36, 44], [93, 8], [58, 52], [14, 38], [78, 50]
+    ];
+    positions.forEach(([leftPct, top], i) => {
+      const star = document.createElement('div');
+      star.className = 'star';
+      const size = Math.random() > 0.5 ? 3 : 2;
+      star.style.width = size + 'px';
+      star.style.height = size + 'px';
+      star.style.left = leftPct + '%';
+      star.style.top = top + 'px';
+      star.style.animationDelay = (Math.random() * 2).toFixed(1) + 's';
+      star.style.animationDuration = (1.5 + Math.random()).toFixed(1) + 's';
+      container.appendChild(star);
+    });
+  })();
+
+  // If already logged in, skip straight to the dashboard
+  if (Auth.isLoggedIn()) {
+    window.location.href = 'index.html';
+  }
+
+  const passwordInput = document.getElementById('passwordInput');
+  const loginBtn = document.getElementById('loginBtn');
+  const loginError = document.getElementById('loginError');
+
+  async function handleLogin() {
+    const password = passwordInput.value.trim();
+    if (!password) {
+      showError('Please enter a password.');
+      return;
+    }
+
+    loginBtn.disabled = true;
+    loginBtn.textContent = 'Checking...';
+    hideError();
+
+    const result = await Auth.login(password);
+
+    if (result.success) {
+      window.location.href = 'index.html';
+    } else {
+      showError(result.message || 'Incorrect password. Please try again.');
+      loginBtn.disabled = false;
+      loginBtn.textContent = 'Sign in';
+      passwordInput.value = '';
+      passwordInput.focus();
+    }
+  }
+
+  function showError(msg) {
+    loginError.textContent = msg;
+    loginError.classList.add('show');
+  }
+  function hideError() {
+    loginError.classList.remove('show');
+  }
+
+  passwordInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') handleLogin();
+  });
+  passwordInput.focus();
+</script>
+
+</body>
+</html>
