@@ -1,77 +1,83 @@
-// ============================================================
-//  auth.js — Supabase Authentication
-//  Handles login, logout, session and user role
-// ============================================================
+// ============================================
+// auth.js — Login / logout logic
+// Talks to the secure Supabase Edge Function (check-password) so the
+// real passwords never live in this file or anywhere in the browser.
+// ============================================
 
-import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
+// Replace with your real Supabase project URL (same one used in supabase-client.js)
+const EDGE_FUNCTION_URL = "https://jwprxvobiunfnucrrzuo.supabase.co/functions/v1/check-password";
 
-// ── CLIENT ────────────────────────────────────────────────────
-export const supabase = createClient(
-  'https://qkyjlggmirnbgagkdgch.supabase.co',
-  'sb_publishable_DuJnaj-C8OqeHKTBymoItw_a5t4qtju'
-);
+/**
+ * Attempts to log in with the given password.
+ * On success, stores the role + session token in sessionStorage
+ * (cleared automatically when the browser tab is closed).
+ */
+async function login(password) {
+  try {
+    const res = await fetch(EDGE_FUNCTION_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ password }),
+    });
+    const data = await res.json();
 
-// ── SESSION ───────────────────────────────────────────────────
-// Returns the current session or null
-export async function getSession() {
-  const { data: { session } } = await supabase.auth.getSession();
-  return session;
-}
-
-// Returns the current user or null
-export async function getUser() {
-  const { data: { user } } = await supabase.auth.getUser();
-  return user;
-}
-
-// Returns the current user's role: 'admin' | 'editor' | 'viewer' | null
-export async function getUserRole() {
-  const user = await getUser();
-  if (!user) return null;
-  const { data, error } = await supabase
-    .from('user_roles')
-    .select('role, full_name')
-    .eq('user_id', user.id)
-    .single();
-  if (error) return null;
-  return data;
-}
-
-// ── LOGIN ─────────────────────────────────────────────────────
-export async function signIn(email, password) {
-  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-  if (error) throw error;
-  return data;
-}
-
-// ── LOGOUT ────────────────────────────────────────────────────
-export async function signOut() {
-  const { error } = await supabase.auth.signOut();
-  if (error) throw error;
-  window.location.href = 'index.html';
-}
-
-// ── GUARD ─────────────────────────────────────────────────────
-// Call this at the top of every protected page (dashboard, archive, suppliers)
-// Redirects to login if no session found
-export async function requireAuth() {
-  const session = await getSession();
-  if (!session) {
-    window.location.href = 'index.html';
-    return null;
+    if (data.success) {
+      sessionStorage.setItem("ct_role", data.role);
+      sessionStorage.setItem("ct_session", data.sessionToken);
+      sessionStorage.setItem("ct_loggedInAt", new Date().toISOString());
+      return { success: true, role: data.role };
+    } else {
+      return { success: false, message: data.message || "Incorrect password" };
+    }
+  } catch (err) {
+    return { success: false, message: "Could not reach the server. Check your connection." };
   }
-  return session;
 }
 
-// ── ROLE HELPERS ──────────────────────────────────────────────
-export function canEdit(role)         { return ['admin', 'editor'].includes(role); }
-export function canManageSuppliers(role) { return role === 'admin'; }
-export function canDeleteArchive(role)   { return role === 'admin'; }
+/** Logs the user out by clearing the session. */
+function logout() {
+  sessionStorage.removeItem("ct_role");
+  sessionStorage.removeItem("ct_session");
+  sessionStorage.removeItem("ct_loggedInAt");
+  window.location.href = "login.html";
+}
 
-// ── AUTH STATE CHANGE ─────────────────────────────────────────
-// Listen for login/logout events across tabs
-export function onAuthChange(callback) {
-  supabase.auth.onAuthStateChange((event, session) => {
-    callback(event, session);
+/** Returns "editor", "viewer", or null if not logged in. */
+function getRole() {
+  return sessionStorage.getItem("ct_role");
+}
+
+/** True if the current user can add/edit/archive containers. */
+function isEditor() {
+  return getRole() === "editor";
+}
+
+/** True if logged in at all (either role). */
+function isLoggedIn() {
+  return !!getRole();
+}
+
+/**
+ * Call this at the top of every protected page (dashboard, archive, etc).
+ * Redirects to login.html if not logged in.
+ */
+function requireLogin() {
+  if (!isLoggedIn()) {
+    window.location.href = "login.html";
+  }
+}
+
+/**
+ * Hides/shows elements based on role.
+ * Add class="editor-only" to any button/element that only editors should see
+ * (Add container, Mark emptied, Remove, Manage suppliers, etc).
+ * Call this once the page has loaded.
+ */
+function applyRoleVisibility() {
+  const editorOnlyElements = document.querySelectorAll(".editor-only");
+  editorOnlyElements.forEach((el) => {
+    el.style.display = isEditor() ? "" : "none";
   });
 }
+
+window.Auth = { login, logout, getRole, isEditor, isLoggedIn, requireLogin, applyRoleVisibility };
