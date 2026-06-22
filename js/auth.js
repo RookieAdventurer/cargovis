@@ -6,7 +6,7 @@
 
 // Replace with your real Supabase project URL (same one used in supabase-client.js)
 const EDGE_FUNCTION_URL = "https://jwprxvobiunfnucrrzuo.supabase.co/functions/v1/check-password";
-
+const SUPABASE_ANON_KEY = "sb_publishable_QaPnj3hornmsAdbHrVM92g_6HPfgUI6";
 /**
  * Attempts to log in with the given password.
  * On success, stores the role + session token in sessionStorage
@@ -15,10 +15,13 @@ const EDGE_FUNCTION_URL = "https://jwprxvobiunfnucrrzuo.supabase.co/functions/v1
 async function login(password) {
   try {
     const res = await fetch(EDGE_FUNCTION_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ password }),
-    });
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    "Authorization": "Bearer " + SUPABASE_ANON_KEY,
+  },
+  body: JSON.stringify({ password }),
+});
     const data = await res.json();
 
     if (data.success) {
