@@ -1,210 +1,102 @@
-// ============================================================
-//  lookup.js — Shipping Line API Calls
-//  Looks up vessel, ETA and status from official APIs
-//  Maersk · Hapag-Lloyd · CMA CGM · MSC
-// ============================================================
+// ============================================
+// lookup.js — Shipping line lookup abstraction layer
+//
+// This is the ONE place that talks to Maersk / Hapag-Lloyd / CMA CGM / MSC.
+// If any of their APIs change later, we only need to fix it here —
+// nothing else in the app needs to know which line a container belongs to.
+//
+// ⚠️ IMPORTANT: Calling these APIs directly from the browser would expose
+// your API keys to anyone who opens dev tools. So actual API calls should
+// go through a Supabase Edge Function (similar pattern to check-password).
+// This file is the FRONTEND side: it calls that Edge Function, which then
+// calls the real shipping line APIs server-side using your stored keys.
+//
+// Until that Edge Function ("lookup-container") is deployed, this file
+// returns a clear "not configured yet" result so the rest of the app
+// still works end-to-end with manual entry as a fallback.
+// ============================================
 
-import { detectLine } from './app.js';
+// Replace with your real Supabase project URL (same one used elsewhere)
+const LOOKUP_FUNCTION_URL = "https://jwprxvobiunfnucrrzuo.supabase.co/functions/v1/lookup-container";
 
-// ── API KEYS ──────────────────────────────────────────────────
-// Add your API keys here once you register on each portal.
-// Keep this file server-side (Supabase Edge Function) in production
-// so keys are never exposed in the browser.
-const KEYS = {
-  maersk:  '',   // maersk.com/developer  →  "Shipment Tracking" product
-  hapag:   '',   // developer.hapag-lloyd.com  →  "Track & Trace" API
-  cmacgm:  '',   // apis.cma-cgm.com  →  "Tracking" API
-  msc:     '',   // myMSC developer portal
-};
+/**
+ * Looks up a single container number.
+ * Returns: { containerNumber, vessel, eta, shippingLine, found, error }
+ */
+async function lookupContainer(containerNumber) {
+  const shippingLine = window.AppDB.detectShippingLine(containerNumber);
 
-// ── MAIN LOOKUP FUNCTION ──────────────────────────────────────
-// Takes an array of container numbers, returns enriched results
-export async function lookupContainers(containerNumbers) {
-  const results = await Promise.allSettled(
-    containerNumbers.map(no => lookupSingle(no))
-  );
-
-  return results.map((result, i) => {
-    if (result.status === 'fulfilled') return result.value;
-    // If lookup failed, return shell with detected line only
+  if (shippingLine === "UNKNOWN") {
     return {
-      container_no: containerNumbers[i],
-      vessel:       '',
-      eta:          '',
-      line:         detectLine(containerNumbers[i]),
-      status:       'lookup_failed',
-      error:        result.reason?.message || 'Lookup failed',
+      containerNumber,
+      vessel: "",
+      eta: "",
+      shippingLine: "",
+      found: false,
+      error: "Could not detect shipping line from prefix. Enter details manually.",
     };
-  });
-}
+  }
 
-// ── SINGLE CONTAINER LOOKUP ───────────────────────────────────
-async function lookupSingle(containerNo) {
-  const line = detectLine(containerNo);
+  try {
+    const res = await fetch(LOOKUP_FUNCTION_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ containerNumber, shippingLine }),
+    });
 
-  switch (line) {
-    case 'Maersk':      return lookupMaersk(containerNo);
-    case 'Hapag-Lloyd': return lookupHapag(containerNo);
-    case 'CMA CGM':     return lookupCMACGM(containerNo);
-    case 'MSC':         return lookupMSC(containerNo);
-    default:            return unknownLine(containerNo, line);
+    if (!res.ok) {
+      // Edge Function not deployed yet, or the carrier API failed —
+      // fall back gracefully so the user can still type it in manually.
+      return {
+        containerNumber,
+        vessel: "",
+        eta: "",
+        shippingLine,
+        found: false,
+        error: "Auto-lookup not available yet — enter details manually.",
+      };
+    }
+
+    const data = await res.json();
+    return {
+      containerNumber,
+      vessel: data.vessel || "",
+      eta: data.eta || "",
+      shippingLine,
+      found: !!data.vessel,
+      error: data.vessel ? null : "No tracking data found for this container yet.",
+    };
+  } catch (err) {
+    return {
+      containerNumber,
+      vessel: "",
+      eta: "",
+      shippingLine,
+      found: false,
+      error: "Auto-lookup not available yet — enter details manually.",
+    };
   }
 }
 
-// ── MAERSK ────────────────────────────────────────────────────
-// Docs: https://developer.maersk.com/product-catalogue/track-and-trace
-// Register at maersk.com/developer → create app → subscribe to "Shipment Tracking"
-async function lookupMaersk(containerNo) {
-  if (!KEYS.maersk) return pendingKey(containerNo, 'Maersk');
+/**
+ * Looks up a batch of container numbers (from the paste box).
+ * Runs lookups in parallel for speed.
+ */
+async function lookupContainers(containerNumbers) {
+  const cleaned = containerNumbers
+    .map((n) => n.trim().toUpperCase())
+    .filter((n) => n.length > 0);
 
-  const res = await fetch(
-    `https://api.maersk.com/track/v1/tracking/${containerNo}`,
-    {
-      headers: {
-        'Consumer-Key': KEYS.maersk,
-        'Accept':       'application/json',
-      }
-    }
-  );
-
-  if (!res.ok) throw new Error(`Maersk API error: ${res.status}`);
-  const data = await res.json();
-
-  // Parse Maersk response structure
-  const vessel = data.containers?.[0]?.vesselName || '';
-  const eta    = data.containers?.[0]?.eta
-    ? data.containers[0].eta.split('T')[0]
-    : '';
-
-  return {
-    container_no: containerNo,
-    vessel,
-    eta,
-    line:   'Maersk',
-    status: 'found',
-  };
+  const results = await Promise.all(cleaned.map((n) => lookupContainer(n)));
+  return results;
 }
 
-// ── HAPAG-LLOYD ───────────────────────────────────────────────
-// Docs: https://developer.hapag-lloyd.com
-// Register → create app → subscribe to "Track & Trace API"
-async function lookupHapag(containerNo) {
-  if (!KEYS.hapag) return pendingKey(containerNo, 'Hapag-Lloyd');
-
-  const res = await fetch(
-    `https://api.hapag-lloyd.com/tracking/v1/containers/${containerNo}`,
-    {
-      headers: {
-        'x-api-key': KEYS.hapag,
-        'Accept':    'application/json',
-      }
-    }
-  );
-
-  if (!res.ok) throw new Error(`Hapag-Lloyd API error: ${res.status}`);
-  const data = await res.json();
-
-  const vessel = data.vesselName || '';
-  const eta    = data.estimatedTimeOfArrival
-    ? data.estimatedTimeOfArrival.split('T')[0]
-    : '';
-
-  return {
-    container_no: containerNo,
-    vessel,
-    eta,
-    line:   'Hapag-Lloyd',
-    status: 'found',
-  };
+/** Parses the paste box text into an array of container numbers. Accepts newlines or commas. */
+function parseContainerInput(rawText) {
+  return rawText
+    .split(/[\n,]+/)
+    .map((s) => s.trim().toUpperCase())
+    .filter((s) => s.length > 0);
 }
 
-// ── CMA CGM ───────────────────────────────────────────────────
-// Docs: https://apis.cma-cgm.com
-// Register → subscribe to "Container Tracking" API
-async function lookupCMACGM(containerNo) {
-  if (!KEYS.cmacgm) return pendingKey(containerNo, 'CMA CGM');
-
-  const res = await fetch(
-    `https://apis.cma-cgm.com/tracking/v1/containers/${containerNo}`,
-    {
-      headers: {
-        'apikey':   KEYS.cmacgm,
-        'Accept':   'application/json',
-      }
-    }
-  );
-
-  if (!res.ok) throw new Error(`CMA CGM API error: ${res.status}`);
-  const data = await res.json();
-
-  const vessel = data.containers?.[0]?.vessel?.vesselName || '';
-  const eta    = data.containers?.[0]?.events
-    ?.find(e => e.eventType === 'ESTIMATED_ARRIVAL')
-    ?.eventDateTime?.split('T')[0] || '';
-
-  return {
-    container_no: containerNo,
-    vessel,
-    eta,
-    line:   'CMA CGM',
-    status: 'found',
-  };
-}
-
-// ── MSC ───────────────────────────────────────────────────────
-// Docs: https://www.msc.com/api
-// Register at myMSC → developer portal → tracking API
-async function lookupMSC(containerNo) {
-  if (!KEYS.msc) return pendingKey(containerNo, 'MSC');
-
-  const res = await fetch(
-    `https://www.msc.com/api/tracking/container/${containerNo}`,
-    {
-      headers: {
-        'Authorization': `Bearer ${KEYS.msc}`,
-        'Accept':        'application/json',
-      }
-    }
-  );
-
-  if (!res.ok) throw new Error(`MSC API error: ${res.status}`);
-  const data = await res.json();
-
-  const vessel = data.vessel?.name || '';
-  const eta    = data.eta
-    ? data.eta.split('T')[0]
-    : '';
-
-  return {
-    container_no: containerNo,
-    vessel,
-    eta,
-    line:   'MSC',
-    status: 'found',
-  };
-}
-
-// ── FALLBACKS ─────────────────────────────────────────────────
-// Returns a shell result when API key not yet configured
-function pendingKey(containerNo, line) {
-  return {
-    container_no: containerNo,
-    vessel:       '',
-    eta:          '',
-    line,
-    status:       'pending_key',
-    message:      `${line} API key not yet configured — enter vessel and ETA manually`,
-  };
-}
-
-// Returns a shell result for unrecognised prefix
-function unknownLine(containerNo, line) {
-  return {
-    container_no: containerNo,
-    vessel:       '',
-    eta:          '',
-    line:         line || 'Unknown',
-    status:       'unknown_line',
-    message:      'Shipping line not recognised from prefix — enter details manually',
-  };
-}
+window.Lookup = { lookupContainer, lookupContainers, parseContainerInput };
