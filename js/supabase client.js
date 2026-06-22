@@ -5,7 +5,7 @@
 // ============================================
 
 const SUPABASE_URL = "https://jwprxvobiunfnucrrzuo.supabase.co";              // e.g. https://xxxxxxxx.supabase.co
-const SUPABASE_PUBLISHABLE_KEY = "https://jwprxvobiunfnucrrzuo.supabase.co"; // the "Publishable key" (anon/public)
+const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_QaPnj3hornmsAdbHrVM92g_6HPfgUI6"; // the "Publishable key" (anon/public)
 
 // Initialize the Supabase client (supabase-js library is loaded via CDN in each HTML file)
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
