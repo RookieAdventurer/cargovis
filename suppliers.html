@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Container Tracker — Suppliers</title>
+<link rel="stylesheet" href="css/styles.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/supabase-js/2.39.0/supabase.min.js"></script>
+</head>
+<body>
+
+<div class="navbar">
+  <div class="nav-left">
+    <div class="nav-icon">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2">
+        <rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8h4l3 3v5h-7V8z"/>
+        <circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/>
+      </svg>
+    </div>
+    <span class="nav-title">Container Tracker</span>
+  </div>
+  <div class="nav-links">
+    <a href="index.html" class="nav-link">Active</a>
+    <a href="archive.html" class="nav-link">Archive</a>
+    <a href="suppliers.html" class="nav-link active editor-only">Suppliers</a>
+  </div>
+  <div class="nav-right">
+    <span class="nav-date" id="todayDate"></span>
+    <div class="avatar" id="userAvatar" onclick="handleLogout()" title="Click to log out">··</div>
+  </div>
+</div>
+
+<div class="page-body" style="max-width:600px">
+
+  <div class="editor-only">
+    <div style="display:flex; gap:8px; margin-bottom:20px">
+      <input class="form-input" id="newSupplierName" placeholder="New supplier name (e.g. a new company you source from)">
+      <button class="btn btn-primary" onclick="handleAddSupplier()" style="white-space:nowrap">+ Add supplier</button>
+    </div>
+  </div>
+
+  <div class="table-wrap">
+    <div class="t-head" style="grid-template-columns: 1fr 0.6fr">
+      <div class="th">Supplier name</div>
+      <div class="th">Active containers</div>
+    </div>
+    <div id="suppliersList"></div>
+  </div>
+
+  <div id="viewerNotice" class="hidden" style="margin-top:16px; font-size:12px; color:var(--grey-text-light); text-align:center">
+    You're viewing in read-only mode. Contact an editor to add or change suppliers.
+  </div>
+
+</div>
+
+<script src="js/supabase-client.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/containers.js"></script>
+<script>
+  Auth.requireLogin();
+  Auth.applyRoleVisibility();
+
+  if (!Auth.isEditor()) {
+    document.getElementById("viewerNotice").classList.remove("hidden");
+  }
+
+  document.getElementById("userAvatar").textContent = Auth.getRole() === "editor" ? "ED" : "VW";
+  function handleLogout() {
+    if (confirm("Log out of Container Tracker?")) Auth.logout();
+  }
+  document.getElementById("todayDate").textContent = Containers.formatFullDate(new Date().toISOString());
+
+  async function loadSuppliers() {
+    const suppliers = await Containers.fetchSuppliers();
+    const activeContainers = await Containers.fetchActiveContainers();
+
+    const list = document.getElementById("suppliersList");
+    list.innerHTML = suppliers.map((s) => {
+      const count = activeContainers.filter((c) => c.supplier_id === s.id).length;
+      return `
+        <div class="t-row" style="grid-template-columns: 1fr 0.6fr; cursor:default">
+          <div style="font-weight:500">${s.name}</div>
+          <div class="muted">${count} container${count !== 1 ? "s" : ""}</div>
+        </div>
+      `;
+    }).join("");
+  }
+
+  async function handleAddSupplier() {
+    const input = document.getElementById("newSupplierName");
+    const name = input.value.trim();
+    if (!name) return;
+
+    const result = await Containers.addSupplier(name);
+    if (!result.success) {
+      alert("Could not add supplier: " + result.message);
+      return;
+    }
+    input.value = "";
+    loadSuppliers();
+  }
+
+  loadSuppliers();
+</script>
+
+</body>
+</html>
