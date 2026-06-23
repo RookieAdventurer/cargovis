@@ -2,7 +2,6 @@
 // containers.js — Add / edit / archive / fetch containers
 // All database reads & writes for the active + archive tables live here.
 // ============================================
-console.log("window.AppDB =", window.AppDB);
 const db = window.AppDB.supabaseClient;
 
 /** Fetch all active containers, joined with their supplier name. */
