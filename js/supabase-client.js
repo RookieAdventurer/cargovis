@@ -30,9 +30,5 @@ document.addEventListener("DOMContentLoaded", function() {
     console.error("Supabase CDN not loaded");
   }
 });
-// Export for use in other files
-window.AppDB = {
-  supabaseClient,
-  detectShippingLine,
-};
+
 
