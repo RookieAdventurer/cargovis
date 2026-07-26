@@ -4,81 +4,47 @@
 // real passwords never live in this file or anywhere in the browser.
 // ============================================
 
-// Replace with your real Supabase project URL (same one used in supabase-client.js)
+// IMPORTANT: Replace SUPABASE_URL below with your real project URL
 const EDGE_FUNCTION_URL = "https://jwprxvobiunfnucrrzuo.supabase.co/functions/v1/check-password";
-const SUPABASE_ANON_KEY = "sb_publishable_QaPnj3hornmsAdbHrVM92g_6HPfgUI6";
-/**
- * Attempts to log in with the given password.
- * On success, stores the role + session token in sessionStorage
- * (cleared automatically when the browser tab is closed).
- */
+const SUPABASE_ANON_KEY  = "sb_publishable_QaPnj3hornmsAdbHrVM92g_6HPfgUI6"; // replace with your real key
+
 async function login(password) {
   try {
     const res = await fetch(EDGE_FUNCTION_URL, {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/json",
-    "Authorization": "Bearer " + SUPABASE_ANON_KEY,
-  },
-  body: JSON.stringify({ password }),
-});
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer " + SUPABASE_ANON_KEY,
+      },
+      body: JSON.stringify({ password }),
+    });
     const data = await res.json();
-
     if (data.success) {
       sessionStorage.setItem("ct_role", data.role);
       sessionStorage.setItem("ct_session", data.sessionToken);
-      sessionStorage.setItem("ct_loggedInAt", new Date().toISOString());
       return { success: true, role: data.role };
-    } else {
-      return { success: false, message: data.message || "Incorrect password" };
     }
+    return { success: false, message: data.message || "Incorrect password" };
   } catch (err) {
-    return { success: false, message: "Could not reach the server. Check your connection." };
+    return { success: false, message: "Could not reach the server." };
   }
 }
 
-/** Logs the user out by clearing the session. */
 function logout() {
-  sessionStorage.removeItem("ct_role");
-  sessionStorage.removeItem("ct_session");
-  sessionStorage.removeItem("ct_loggedInAt");
+  sessionStorage.clear();
   window.location.href = "login.html";
 }
 
-/** Returns "editor", "viewer", or null if not logged in. */
-function getRole() {
-  return sessionStorage.getItem("ct_role");
-}
+function getRole()    { return sessionStorage.getItem("ct_role"); }
+function isEditor()   { return getRole() === "editor"; }
+function isLoggedIn() { return !!getRole(); }
 
-/** True if the current user can add/edit/archive containers. */
-function isEditor() {
-  return getRole() === "editor";
-}
-
-/** True if logged in at all (either role). */
-function isLoggedIn() {
-  return !!getRole();
-}
-
-/**
- * Call this at the top of every protected page (dashboard, archive, etc).
- * Redirects to login.html if not logged in.
- */
 function requireLogin() {
-  if (!isLoggedIn()) {
-    window.location.href = "login.html";
-  }
+  if (!isLoggedIn()) window.location.href = "login.html";
 }
 
-/**
- * Hides/shows elements based on role.
- * Add class="editor-only" to any button/element that only editors should see
- * (Add container, Mark emptied, Remove, Manage suppliers, etc).
- * Call this once the page has loaded.
- */
 function applyRoleVisibility() {
-  const editorOnlyElements = document.querySelectorAll(".editor-only");
-  editorOnlyElements.forEach((el) => {
+  document.querySelectorAll(".editor-only").forEach(el => {
     el.style.display = isEditor() ? "" : "none";
   });
 }
