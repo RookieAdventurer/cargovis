@@ -16,87 +16,33 @@
 // still works end-to-end with manual entry as a fallback.
 // ============================================
 
-// Replace with your real Supabase project URL (same one used elsewhere)
-const LOOKUP_FUNCTION_URL = "https://jwprxvobiunfnucrrzuo.supabase.co/functions/v1/lookup-container";
+const LOOKUP_URL = "https://jwprxvobiunfnucrrzuo.supabase.co/functions/v1/lookup-container";
 
-/**
- * Looks up a single container number.
- * Returns: { containerNumber, vessel, eta, shippingLine, found, error }
- */
 async function lookupContainer(containerNumber) {
-  const shippingLine = window.AppDB.detectShippingLine(containerNumber);
-
-  if (shippingLine === "UNKNOWN") {
-    return {
-      containerNumber,
-      vessel: "",
-      eta: "",
-      shippingLine: "",
-      found: false,
-      error: "Could not detect shipping line from prefix. Enter details manually.",
-    };
+  const line = window.AppDB.detectShippingLine(containerNumber);
+  if (line === "UNKNOWN") {
+    return { containerNumber, vessel:"", eta:"", shippingLine:"", found:false };
   }
-
   try {
-    const res = await fetch(LOOKUP_FUNCTION_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ containerNumber, shippingLine }),
+    const res = await fetch(LOOKUP_URL, {
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({ containerNumber, shippingLine: line }),
     });
-
-    if (!res.ok) {
-      // Edge Function not deployed yet, or the carrier API failed —
-      // fall back gracefully so the user can still type it in manually.
-      return {
-        containerNumber,
-        vessel: "",
-        eta: "",
-        shippingLine,
-        found: false,
-        error: "Auto-lookup not available yet — enter details manually.",
-      };
-    }
-
+    if (!res.ok) return { containerNumber, vessel:"", eta:"", shippingLine:line, found:false };
     const data = await res.json();
-    return {
-      containerNumber,
-      vessel: data.vessel || "",
-      eta: data.eta || "",
-      shippingLine,
-      found: !!data.vessel,
-      error: data.vessel ? null : "No tracking data found for this container yet.",
-    };
-  } catch (err) {
-    return {
-      containerNumber,
-      vessel: "",
-      eta: "",
-      shippingLine,
-      found: false,
-      error: "Auto-lookup not available yet — enter details manually.",
-    };
+    return { containerNumber, vessel:data.vessel||"", eta:data.eta||"", shippingLine:line, found:!!data.vessel };
+  } catch {
+    return { containerNumber, vessel:"", eta:"", shippingLine:line, found:false };
   }
 }
 
-/**
- * Looks up a batch of container numbers (from the paste box).
- * Runs lookups in parallel for speed.
- */
-async function lookupContainers(containerNumbers) {
-  const cleaned = containerNumbers
-    .map((n) => n.trim().toUpperCase())
-    .filter((n) => n.length > 0);
-
-  const results = await Promise.all(cleaned.map((n) => lookupContainer(n)));
-  return results;
+async function lookupContainers(numbers) {
+  return Promise.all(numbers.map(n => lookupContainer(n)));
 }
 
-/** Parses the paste box text into an array of container numbers. Accepts newlines or commas. */
-function parseContainerInput(rawText) {
-  return rawText
-    .split(/[\n,]+/)
-    .map((s) => s.trim().toUpperCase())
-    .filter((s) => s.length > 0);
+function parseContainerInput(raw) {
+  return raw.split(/[\n,]+/).map(s=>s.trim().toUpperCase()).filter(s=>s.length>0);
 }
 
 window.Lookup = { lookupContainer, lookupContainers, parseContainerInput };
