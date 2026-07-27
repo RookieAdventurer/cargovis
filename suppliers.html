@@ -89,18 +89,21 @@
   }
 
   async function handleAddSupplier() {
-    const input = document.getElementById("newSupplierName");
-    const name = input.value.trim();
-    if (!name) return;
-
-    const result = await Containers.addSupplier(name);
-    if (!result.success) {
-      alert("Could not add supplier: " + result.message);
-      return;
-    }
-    input.value = "";
-    loadSuppliers();
+  console.log("AppDB:", window.AppDB);
+  console.log("supabaseClient:", window.AppDB?.supabaseClient);
+  const input = document.getElementById("newSupplierName");
+  const name = input.value.trim();
+  console.log("name:", name);
+  if (!name) { console.log("STOPPED: no name"); return; }
+  const result = await Containers.addSupplier(name);
+  console.log("result:", result);
+  if (!result.success) {
+    alert("Could not add supplier: " + result.message);
+    return;
   }
+  input.value = "";
+  loadSuppliers();
+}
 
   loadSuppliers();
 </script>
