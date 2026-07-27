@@ -15,7 +15,16 @@ function detectShippingLine(containerNumber) {
   return PREFIX_TO_LINE[prefix] || "UNKNOWN";
 }
 
-window.AppDB = {
-  supabaseClient: window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY),
-  detectShippingLine,
-};
+function initSupabase() {
+  if (window.supabase) {
+    window.AppDB = {
+      supabaseClient: window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY),
+      detectShippingLine,
+    };
+  } else {
+    setTimeout(initSupabase, 50);
+  }
+}
+
+window.AppDB = { supabaseClient: null, detectShippingLine };
+initSupabase();
