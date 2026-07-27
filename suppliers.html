@@ -67,15 +67,24 @@
   }
 
   document.getElementById("userAvatar").textContent = Auth.getRole() === "editor" ? "ED" : "VW";
+  document.getElementById("todayDate").textContent = new Date().toLocaleDateString("en-GB", {weekday:"long", day:"numeric", month:"long", year:"numeric"});
+
   function handleLogout() {
     if (confirm("Log out of Container Tracker?")) Auth.logout();
   }
-  document.getElementById("todayDate").textContent = Containers.formatFullDate(new Date().toISOString());
+
+  // Wait for Supabase to be ready before doing anything
+  function waitForDB(callback) {
+    if (window.AppDB && window.AppDB.supabaseClient) {
+      callback();
+    } else {
+      setTimeout(() => waitForDB(callback), 100);
+    }
+  }
 
   async function loadSuppliers() {
     const suppliers = await Containers.fetchSuppliers();
     const activeContainers = await Containers.fetchActiveContainers();
-
     const list = document.getElementById("suppliersList");
     list.innerHTML = suppliers.map((s) => {
       const count = activeContainers.filter((c) => c.supplier_id === s.id).length;
@@ -89,23 +98,20 @@
   }
 
   async function handleAddSupplier() {
-  console.log("AppDB:", window.AppDB);
-  console.log("supabaseClient:", window.AppDB?.supabaseClient);
-  const input = document.getElementById("newSupplierName");
-  const name = input.value.trim();
-  console.log("name:", name);
-  if (!name) { console.log("STOPPED: no name"); return; }
-  const result = await Containers.addSupplier(name);
-  console.log("result:", result);
-  if (!result.success) {
-    alert("Could not add supplier: " + result.message);
-    return;
+    const input = document.getElementById("newSupplierName");
+    const name = input.value.trim();
+    if (!name) return;
+    const result = await Containers.addSupplier(name);
+    if (!result.success) {
+      alert("Could not add supplier: " + result.message);
+      return;
+    }
+    input.value = "";
+    loadSuppliers();
   }
-  input.value = "";
-  loadSuppliers();
-}
 
-  loadSuppliers();
+  // Only start loading once Supabase is confirmed ready
+  waitForDB(() => loadSuppliers());
 </script>
 
 </body>
