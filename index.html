@@ -6,15 +6,13 @@
 <title>Container Tracker — Active</title>
 <script src="js/supabase.js"></script>
 <link rel="stylesheet" href="css/styles.css">
-
 </head>
 <body>
 
-<!-- ============ Loading screen (port crane) ============ -->
 <div class="loading-screen hidden" id="loadingScreen">
   <div style="text-align:center">
-    <div class="loading-title" id="loadingTitle">Looking up your containers...</div>
-    <div class="loading-sub" id="loadingSub">Checking Maersk · Hapag-Lloyd · CMA CGM · MSC</div>
+    <div class="loading-title" id="loadingTitle">Loading...</div>
+    <div class="loading-sub" id="loadingSub"></div>
     <div class="loading-progress"><div class="loading-progress-fill"></div></div>
   </div>
   <svg width="200" height="110" viewBox="0 0 200 110" fill="none" style="margin-top:10px">
@@ -30,7 +28,6 @@
   </svg>
 </div>
 
-<!-- ============ Top navigation ============ -->
 <div class="navbar">
   <div class="nav-left">
     <div class="nav-icon">
@@ -48,47 +45,23 @@
   </div>
   <div class="nav-right">
     <span class="nav-date" id="todayDate"></span>
-    <div class="avatar" id="userAvatar" onclick="handleLogout()" title="Click to log out">··</div>
+    <div class="avatar" id="userAvatar" onclick="handleLogout()" title="Log out">··</div>
   </div>
 </div>
 
 <div class="page-body">
-
-  <!-- ============ Stat cards ============ -->
   <div class="stats">
-    <div class="stat" style="border-left-color: var(--navy)">
-      <div class="stat-label">Active containers</div>
-      <div class="stat-value" id="statActive">—</div>
-      <div class="stat-sub" id="statActiveSub">across all suppliers</div>
-    </div>
-    <div class="stat" style="border-left-color: var(--green-accent)">
-      <div class="stat-label">Arrived</div>
-      <div class="stat-value" id="statArrived" style="color: var(--green-text)">—</div>
-      <div class="stat-sub">ready to empty</div>
-    </div>
-    <div class="stat" style="border-left-color: var(--red-accent)">
-      <div class="stat-label">Not yet arrived</div>
-      <div class="stat-value" id="statNotArrived" style="color: var(--red-text)">—</div>
-      <div class="stat-sub">in transit</div>
-    </div>
-    <div class="stat" style="border-left-color: var(--blue-light)">
-      <div class="stat-label">Archived</div>
-      <div class="stat-value" id="statArchived" style="color: #1D4ED8">—</div>
-      <div class="stat-sub">emptied containers</div>
-    </div>
+    <div class="stat" style="border-left-color:#1F3864"><div class="stat-label">Active containers</div><div class="stat-value" id="statActive">—</div><div class="stat-sub" id="statActiveSub">across all suppliers</div></div>
+    <div class="stat" style="border-left-color:#059669"><div class="stat-label">Arrived</div><div class="stat-value" id="statArrived" style="color:#065F46">—</div><div class="stat-sub">ready to empty</div></div>
+    <div class="stat" style="border-left-color:#DC2626"><div class="stat-label">Not yet arrived</div><div class="stat-value" id="statNotArrived" style="color:#991B1B">—</div><div class="stat-sub">in transit</div></div>
+    <div class="stat" style="border-left-color:#93C5FD"><div class="stat-label">Archived</div><div class="stat-value" id="statArchived" style="color:#1D4ED8">—</div><div class="stat-sub">emptied containers</div></div>
   </div>
-
-  <!-- ============ Toolbar ============ -->
   <div class="toolbar">
     <div class="search-box">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" stroke-width="2">
-        <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
-      </svg>
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
       <input type="text" id="searchInput" placeholder="Search container, vessel, supplier..." oninput="renderTable()">
     </div>
-    <select class="btn" id="filterSupplier" onchange="renderTable()">
-      <option value="">All suppliers</option>
-    </select>
+    <select class="btn" id="filterSupplier" onchange="renderTable()"><option value="">All suppliers</option></select>
     <select class="btn" id="filterStatus" onchange="renderTable()">
       <option value="">All statuses</option>
       <option value="ARRIVED">Arrived</option>
@@ -98,51 +71,389 @@
       <button id="viewBySupplier" class="active" onclick="setView('supplier')">By supplier</button>
       <button id="viewByTimeline" onclick="setView('timeline')">Timeline</button>
     </div>
-    <div style="margin-left:auto; display:flex; gap:8px">
-      <button class="btn" onclick="exportExcel()">↓ Excel</button>
-      <button class="btn" onclick="exportPDF()">↓ PDF</button>
+    <div style="margin-left:auto;display:flex;gap:8px">
+      <button class="btn" onclick="doExportExcel()">↓ Excel</button>
+      <button class="btn" onclick="doExportPDF()">↓ PDF</button>
       <button class="btn btn-primary editor-only" onclick="openAddModal()">+ Add containers</button>
     </div>
   </div>
-
-  <!-- ============ Table / Timeline container ============ -->
   <div id="contentArea"></div>
-
 </div>
-
-<!-- ============ Add containers modal (built in containers-ui.js) ============ -->
 <div id="modalRoot"></div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
-<script src="js/supabase-client.js"></script>
-<script src="js/auth.js"></script>
-<script src="js/containers.js"></script>
-<script src="js/lookup.js"></script>
-<script src="js/export.js"></script>
-<script src="js/containers-ui.js"></script>
 <script>
-  Auth.requireLogin();
-  Auth.applyRoleVisibility();
+// ═══════════════════════════════════════════
+// CONFIG — update these with your real values
+// ═══════════════════════════════════════════
+const SUPABASE_URL = "https://jwprxvobiunfnucrrzuo.supabase.co";
+const SUPABASE_KEY = "YOUR_PUBLISHABLE_KEY_HERE";
+const EDGE_URL     = "https://jwprxvobiunfnucrrzuo.supabase.co/functions/v1/check-password";
 
-  document.getElementById("userAvatar").textContent = Auth.getRole() === "editor" ? "ED" : "VW";
-  function handleLogout() {
-    if (confirm("Log out of Container Tracker?")) Auth.logout();
-  }
+// ═══════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════
+let db, allContainers = [], allSuppliers = [], activeDetailId = null, currentView = "supplier";
 
-  document.getElementById("todayDate").textContent = Containers.formatFullDate(new Date().toISOString());
+// ═══════════════════════════════════════════
+// INIT — runs after everything has loaded
+// ═══════════════════════════════════════════
+window.addEventListener("load", async function() {
+  db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-  let currentView = "supplier"; // 'supplier' or 'timeline'
-  function setView(view) {
-    currentView = view;
-    document.getElementById("viewBySupplier").classList.toggle("active", view === "supplier");
-    document.getElementById("viewByTimeline").classList.toggle("active", view === "timeline");
-    renderTable();
-  }
+  // Auth check
+  const role = sessionStorage.getItem("ct_role");
+  if (!role) { window.location.href = "login.html"; return; }
+  document.querySelectorAll(".editor-only").forEach(el => el.style.display = role==="editor"?"":"none");
+  document.getElementById("userAvatar").textContent = role==="editor"?"ED":"VW";
+  document.getElementById("todayDate").textContent = fmtDate(new Date().toISOString());
 
-  // Initial load
-  initDashboard();
+  await initDashboard();
+});
+
+function handleLogout() { if(confirm("Log out?")){ sessionStorage.clear(); window.location.href="login.html"; } }
+
+// ═══════════════════════════════════════════
+// DATABASE
+// ═══════════════════════════════════════════
+async function fetchContainers()  { const {data}=await db.from("containers").select("*,suppliers(name)").order("eta",{ascending:true}); return data||[]; }
+async function fetchArchived()    { const {data}=await db.from("archived_containers").select("*,suppliers(name)").order("emptied_on",{ascending:false}); return data||[]; }
+async function fetchSuppliers()   { const {data}=await db.from("suppliers").select("*").order("name"); return data||[]; }
+async function addSupplierDB(name){ const {data,error}=await db.from("suppliers").insert({name}).select().single(); if(error)return{success:false,message:error.message}; return{success:true,supplier:data}; }
+
+async function addContainersDB(rows) {
+  const payload = rows.map(r=>({...r, status:computeStatus(r.eta), created_by:sessionStorage.getItem("ct_role")||"unknown"}));
+  const {data,error}=await db.from("containers").insert(payload).select();
+  if(error)return{success:false,message:error.message};
+  return{success:true,containers:data};
+}
+
+async function updateContainerDB(id,updates) {
+  const payload={...updates,updated_at:new Date().toISOString()};
+  if(updates.eta)payload.status=computeStatus(updates.eta);
+  const {data,error}=await db.from("containers").update(payload).eq("id",id).select().single();
+  if(error)return{success:false,message:error.message};
+  return{success:true,container:data};
+}
+
+async function deleteContainerDB(id) { const {error}=await db.from("containers").delete().eq("id",id); if(error)return{success:false,message:error.message}; return{success:true}; }
+
+async function markEmptiedDB(c) {
+  const row={container_number:c.container_number,vessel:c.vessel,eta:c.eta,shipping_line:c.shipping_line,
+    supplier_id:c.supplier_id,recipient:c.recipient,packing_list_url:c.packing_list_url,
+    packing_list_filename:c.packing_list_filename,created_at:c.created_at,
+    emptied_on:new Date().toISOString().split("T")[0],emptied_by:sessionStorage.getItem("ct_role")||"unknown"};
+  const {error:e1}=await db.from("archived_containers").insert(row);
+  if(e1)return{success:false,message:e1.message};
+  const {error:e2}=await db.from("containers").delete().eq("id",c.id);
+  if(e2)return{success:false,message:e2.message};
+  return{success:true};
+}
+
+// ═══════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════
+function computeStatus(eta) {
+  if(!eta)return"NOT ARRIVED";
+  const t=new Date();t.setHours(0,0,0,0);
+  const d=new Date(eta);d.setHours(0,0,0,0);
+  return d<=t?"ARRIVED":"NOT ARRIVED";
+}
+
+function fmtDate(s) {
+  if(!s)return"—";
+  const d=new Date(s);
+  const days=["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+  const months=["January","February","March","April","May","June","July","August","September","October","November","December"];
+  const n=d.getDate();
+  const sfx=(n>=11&&n<=13)?"th":{1:"st",2:"nd",3:"rd"}[n%10]||"th";
+  return`${days[d.getDay()]}, ${n}${sfx} ${months[d.getMonth()]} ${d.getFullYear()}`;
+}
+
+function detectLine(n) {
+  const m={MRKU:"MAERSK",MSKU:"MAERSK",MSDU:"MAERSK",MRSU:"MAERSK",SUDU:"MAERSK",SEAU:"MAERSK",HASU:"MAERSK",TRHU:"MAERSK",TXGU:"HAPAG",HLXU:"HAPAG",HLCU:"HAPAG",SEKU:"CMA CGM",CMAU:"CMA CGM",CGMU:"CMA CGM",MSCU:"MSC",MEDU:"MSC"};
+  return m[n.trim().toUpperCase().slice(0,4)]||"UNKNOWN";
+}
+
+function showLoading(t,s){const el=document.getElementById("loadingScreen");document.getElementById("loadingTitle").textContent=t;document.getElementById("loadingSub").textContent=s||"";el.classList.remove("hidden");}
+function hideLoading(){document.getElementById("loadingScreen").classList.add("hidden");}
+function setView(v){currentView=v;document.getElementById("viewBySupplier").classList.toggle("active",v==="supplier");document.getElementById("viewByTimeline").classList.toggle("active",v==="timeline");renderTable();}
+
+// ═══════════════════════════════════════════
+// DASHBOARD
+// ═══════════════════════════════════════════
+async function initDashboard() {
+  showLoading("Loading your containers...", "Fetching from the database");
+  allSuppliers  = await fetchSuppliers();
+  allContainers = await fetchContainers();
+  populateSupplierFilter();
+  updateStats();
+  renderTable();
+  hideLoading();
+}
+
+function populateSupplierFilter() {
+  const sel=document.getElementById("filterSupplier");
+  allSuppliers.forEach(s=>{ const o=document.createElement("option"); o.value=s.id; o.textContent=s.name; sel.appendChild(o); });
+}
+
+function updateStats() {
+  const total=allContainers.length, arrived=allContainers.filter(c=>c.status==="ARRIVED").length;
+  document.getElementById("statActive").textContent=total;
+  document.getElementById("statActiveSub").textContent=`across ${allSuppliers.length} suppliers`;
+  document.getElementById("statArrived").textContent=arrived;
+  document.getElementById("statNotArrived").textContent=total-arrived;
+  fetchArchived().then(a=>document.getElementById("statArchived").textContent=a.length);
+}
+
+function getFiltered() {
+  const q=(document.getElementById("searchInput")?.value||"").toLowerCase();
+  const sup=document.getElementById("filterSupplier")?.value||"";
+  const sta=document.getElementById("filterStatus")?.value||"";
+  return allContainers.filter(c=>{
+    if(q&&!`${c.container_number} ${c.vessel||""} ${c.suppliers?.name||""}`.toLowerCase().includes(q))return false;
+    if(sup&&c.supplier_id!==sup)return false;
+    if(sta&&c.status!==sta)return false;
+    return true;
+  });
+}
+
+function renderTable() {
+  const el=document.getElementById("contentArea"); if(!el)return;
+  const f=getFiltered();
+  if(!f.length){el.innerHTML=emptyHTML();return;}
+  el.innerHTML=currentView==="timeline"?timelineHTML(f):supplierHTML(f);
+}
+
+function emptyHTML(){return`<div class="empty-state"><div class="empty-illustration"><svg width="180" height="110" viewBox="0 0 180 110" fill="none"><rect x="10" y="72" width="160" height="32" rx="4" fill="#1F3864" stroke="#2A5A9F" stroke-width="1.2"/><rect x="14" y="75" width="46" height="26" rx="2" fill="#E53E3E"/><rect x="64" y="75" width="46" height="26" rx="2" fill="#D69E2E"/><rect x="114" y="75" width="52" height="26" rx="2" fill="#276749"/><rect x="22" y="38" width="136" height="36" rx="4" fill="#162D50" stroke="#2A5A9F" stroke-width="1.2"/><rect x="26" y="41" width="40" height="30" rx="2" fill="#3182CE"/><rect x="70" y="41" width="40" height="30" rx="2" fill="#E53E3E"/><rect x="114" y="41" width="40" height="30" rx="2" fill="#D69E2E"/><rect x="40" y="10" width="100" height="30" rx="4" fill="#1A3A6B" stroke="#2A5A9F" stroke-width="1.2"/><rect x="44" y="13" width="28" height="24" rx="2" fill="#276749"/><rect x="76" y="13" width="28" height="24" rx="2" fill="#E53E3E"/><rect x="108" y="13" width="28" height="24" rx="2" fill="#3182CE"/></svg></div><div class="empty-shadow"></div><div class="empty-title">No containers found</div><div class="empty-sub">Paste your container numbers and we'll fetch everything automatically</div><button class="btn btn-primary editor-only" onclick="openAddModal()" style="margin-top:6px">+ Add your first container</button></div>`;}
+
+function supplierHTML(containers) {
+  const grouped={};
+  containers.forEach(c=>{const n=c.suppliers?.name||"Unassigned";if(!grouped[n])grouped[n]=[];grouped[n].push(c);});
+  let html='<div class="table-wrap">';
+  Object.entries(grouped).forEach(([name,rows],i)=>{
+    html+=`<div class="section-header" ${i>0?'style="border-top:0.5px solid var(--grey-border)"':''}>
+      <span class="section-name">${name.toUpperCase()}</span><span class="section-count">${rows.length} container${rows.length!==1?'s':''}</span></div>
+      <div class="t-head" style="grid-template-columns:1.4fr 1.5fr 1.9fr 0.9fr 0.85fr 0.9fr">
+        <div class="th">Container no.</div><div class="th">Vessel</div><div class="th">ETA</div><div class="th">Line</div><div class="th">Status</div><div class="th">Packing list</div>
+      </div>`;
+    rows.forEach(c=>{html+=rowHTML(c);});
+    html+=detailHTML(rows);
+  });
+  html+="</div>";return html;
+}
+
+function timelineHTML(containers) {
+  const today=new Date();today.setHours(0,0,0,0);
+  const in7=new Date(today);in7.setDate(today.getDate()+7);
+  const endM=new Date(today.getFullYear(),today.getMonth()+1,0);
+  const buckets={overdue:{label:"Overdue / Arrived",items:[],color:"#DC2626"},thisWeek:{label:"This week",items:[],color:"#D69E2E"},thisMonth:{label:"This month",items:[],color:"#93C5FD"},later:{label:"Next month and beyond",items:[],color:"#9CA3AF"}};
+  containers.forEach(c=>{
+    if(!c.eta){buckets.later.items.push({...c,daysAway:999});return;}
+    const eta=new Date(c.eta);eta.setHours(0,0,0,0);
+    const days=Math.round((eta-today)/86400000);
+    const key=eta<=today?"overdue":eta<=in7?"thisWeek":eta<=endM?"thisMonth":"later";
+    buckets[key].items.push({...c,daysAway:days});
+  });
+  let html="";
+  Object.entries(buckets).forEach(([key,b])=>{
+    if(!b.items.length)return;
+    const chip=key==="overdue"?"overdue":key==="thisWeek"?"soon":key==="thisMonth"?"later":"far";
+    html+=`<div class="bucket"><div class="bucket-header"><span class="bucket-dot" style="background:${b.color}"></span><span class="bucket-title">${b.label}</span><span class="bucket-count">${b.items.length} container${b.items.length!==1?'s':''}</span></div>
+      <div class="table-wrap"><div class="t-head" style="grid-template-columns:1.3fr 1.3fr 1.6fr 0.8fr 0.8fr 1fr">
+        <div class="th">Container no.</div><div class="th">Vessel</div><div class="th">ETA</div><div class="th">Supplier</div><div class="th">Line</div><div class="th">Countdown</div></div>`;
+    b.items.forEach(c=>{
+      const label=c.daysAway===0?"Arrives today":c.daysAway===1?"Arrives tomorrow":c.daysAway>1?`Arrives in ${c.daysAway} days`:c.daysAway===-1?"Arrived yesterday":`Arrived ${Math.abs(c.daysAway)} days ago`;
+      html+=`<div class="t-row" style="grid-template-columns:1.3fr 1.3fr 1.6fr 0.8fr 0.8fr 1fr" onclick="toggleDetail('${c.id}')">
+        <div class="mono">${c.container_number}</div><div class="muted">${c.vessel||"—"}</div><div class="muted">${fmtDate(c.eta)}</div>
+        <div class="muted">${c.suppliers?.name||"—"}</div><div class="muted">${c.shipping_line||"—"}</div>
+        <div><span class="countdown-chip ${chip}">${label}</span></div></div>`;
+    });
+    html+="</div></div>";
+  });
+  return html||emptyHTML();
+}
+
+function rowHTML(c){
+  const sc=c.status==="ARRIVED"?"arrived":"pending";
+  const ic=c.status==="ARRIVED"?"#059669":"#DC2626";
+  const pl=c.packing_list_url?`<span class="pl-btn" onclick="event.stopPropagation();viewPL('${c.id}')">📄 View / Download</span>`:`<span class="pl-missing">No file yet</span>`;
+  return`<div class="t-row" style="grid-template-columns:1.4fr 1.5fr 1.9fr 0.9fr 0.85fr 0.9fr" onclick="toggleDetail('${c.id}')">
+    <div class="mono">${c.container_number}</div><div class="muted">${c.vessel||"—"}</div><div class="muted">${fmtDate(c.eta)}</div>
+    <div class="muted">${c.shipping_line||"—"}</div>
+    <div><span class="badge ${sc}"><span class="ind" style="background:${ic}"></span>${c.status==="ARRIVED"?"Arrived":"Not arrived"}</span></div>
+    <div>${pl}</div></div>`;
+}
+
+function detailHTML(rows){
+  if(!activeDetailId)return"";
+  const c=rows.find(r=>r.id===activeDetailId);if(!c)return"";
+  const pl=c.packing_list_url
+    ?`<div class="pl-file-row"><div style="width:28px;height:28px;background:#DBEAFE;border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1D4ED8" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div><div style="flex:1"><div class="pl-file-name">${c.packing_list_filename||"Packing list"}</div></div><div style="display:flex;gap:6px"><button class="pl-action-btn" onclick="viewPL('${c.id}')">View</button><button class="pl-action-btn editor-only" onclick="document.getElementById('pu_${c.id}').click()">Replace</button></div></div><input type="file" id="pu_${c.id}" class="hidden" onchange="uploadPL(event,'${c.id}')">`
+    :`<div class="pl-upload-area editor-only" onclick="document.getElementById('pu_${c.id}').click()">Click to upload packing list (PDF, Word, or Excel)</div><input type="file" id="pu_${c.id}" class="hidden" onchange="uploadPL(event,'${c.id}')"><p style="font-size:10px;color:#D1D5DB;font-style:italic;margin-top:8px">No packing list uploaded yet</p>`;
+  return`<div class="detail-panel">
+    <div><div class="detail-section-title">Shipment info</div><div class="detail-card">
+      <div class="detail-row"><span class="detail-key">Container</span><span class="detail-val mono">${c.container_number}</span></div>
+      <div class="detail-row"><span class="detail-key">Vessel</span><span class="detail-val">${c.vessel||"—"}</span></div>
+      <div class="detail-row"><span class="detail-key">ETA</span><span class="detail-val">${fmtDate(c.eta)}</span></div>
+      <div class="detail-row"><span class="detail-key">Shipping line</span><span class="detail-val">${c.shipping_line||"—"}</span></div>
+      <div class="detail-row"><span class="detail-key">Supplier</span><span class="detail-val">${c.suppliers?.name||"—"}</span></div>
+      <div class="detail-row"><span class="detail-key">Recipient</span><span class="detail-val">${c.recipient||"WAGYINGO"}</span></div>
+      <div class="detail-row"><span class="detail-key">Status</span><span class="detail-val" style="color:${c.status==='ARRIVED'?'#065F46':'#991B1B'}">${c.status==='ARRIVED'?'Arrived':'Not arrived'}</span></div>
+    </div>
+    <div class="editor-only" style="display:flex;gap:8px;margin-top:10px">
+      <button class="btn" onclick="openEditModal('${c.id}')">Edit</button>
+      <button class="btn" style="color:#1D4ED8;border-color:#BFDBFE" onclick="doMarkEmptied('${c.id}')">Mark emptied</button>
+      <button class="btn" style="color:#991B1B;border-color:#F7C1C1" onclick="doDelete('${c.id}')">Remove</button>
+    </div></div>
+    <div><div class="detail-section-title">Packing list</div><div class="detail-card">${pl}</div></div>
+  </div>`;
+}
+
+function toggleDetail(id){activeDetailId=activeDetailId===id?null:id;renderTable();}
+function viewPL(id){const c=allContainers.find(x=>x.id===id);if(c?.packing_list_url)window.open(c.packing_list_url,"_blank");}
+
+// ═══════════════════════════════════════════
+// ADD MODAL
+// ═══════════════════════════════════════════
+function openAddModal(){
+  const opts=allSuppliers.map(s=>`<option value="${s.id}">${s.name}</option>`).join("");
+  document.getElementById("modalRoot").innerHTML=`
+    <div class="modal-overlay" onclick="closeOverlay(event)"><div class="modal" onclick="event.stopPropagation()">
+      <div class="modal-title">Add containers</div>
+      <div class="modal-sub">Paste container numbers — one per line. We'll detect the shipping line automatically.</div>
+      <div class="form-row"><label class="form-label">Container numbers</label>
+        <textarea class="form-textarea" id="pasteInput" placeholder="MRKU3877867&#10;MRKU5521221&#10;TRHU5206816"></textarea></div>
+      <div class="form-grid">
+        <div class="form-row"><label class="form-label">Supplier</label><select class="form-select" id="supplierSel">${opts}</select></div>
+        <div class="form-row"><label class="form-label">Default recipient</label>
+          <select class="form-select" id="recipientSel"><option value="WAGYINGO">WAGYINGO</option><option value="Lucy">Lucy</option></select></div>
+      </div>
+      <div class="modal-footer"><button class="btn" onclick="closeModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="runLookup()">Look up containers →</button></div>
+    </div></div>`;
+}
+
+let pendingRows=[];
+async function runLookup(){
+  const raw=document.getElementById("pasteInput").value;
+  const numbers=raw.split(/[\n,]+/).map(s=>s.trim().toUpperCase()).filter(s=>s.length>0);
+  if(!numbers.length){alert("Please paste at least one container number.");return;}
+  const suppId=document.getElementById("supplierSel").value;
+  const recipient=document.getElementById("recipientSel").value;
+  showLoading("Looking up containers...",`Checking ${numbers.length} container${numbers.length>1?"s":""}`);
+  pendingRows=numbers.map(n=>({container_number:n,vessel:"",eta:"",shipping_line:detectLine(n),supplier_id:suppId,recipient,auto:false}));
+  hideLoading();
+  renderReviewModal();
+}
+
+function renderReviewModal(){
+  const rowsHTML=pendingRows.map((r,i)=>`
+    <div style="display:grid;grid-template-columns:1.3fr 1.4fr 1.3fr 0.9fr;gap:6px;padding:9px 12px;border-bottom:0.5px solid var(--grey-border);align-items:center">
+      <div class="mono" style="font-size:11px">${r.container_number}</div>
+      <input class="form-input" style="height:30px;font-size:11px" value="${r.vessel}" onchange="pendingRows[${i}].vessel=this.value" placeholder="Vessel name">
+      <input type="date" class="form-input" style="height:30px;font-size:11px" value="${r.eta}" onchange="pendingRows[${i}].eta=this.value">
+      <select class="form-input" style="height:30px;font-size:11px" onchange="pendingRows[${i}].shipping_line=this.value">
+        ${["MAERSK","HAPAG","CMA CGM","MSC","UNKNOWN"].map(l=>`<option ${r.shipping_line===l?"selected":""}>${l}</option>`).join("")}
+      </select></div>`).join("");
+  document.getElementById("modalRoot").innerHTML=`
+    <div class="modal-overlay" onclick="closeOverlay(event)"><div class="modal" style="max-width:680px" onclick="event.stopPropagation()">
+      <div class="modal-title">Review & confirm</div>
+      <div class="modal-sub">${pendingRows.length} container${pendingRows.length!==1?"s":""} ready. Fill in vessel and ETA for each, then save.</div>
+      <div style="background:var(--bg-subtle);border:0.5px solid var(--grey-border);border-radius:10px;overflow:hidden;margin-bottom:8px">
+        <div style="display:grid;grid-template-columns:1.3fr 1.4fr 1.3fr 0.9fr;gap:6px;padding:8px 12px;border-bottom:0.5px solid var(--grey-border);background:#fff">
+          <div class="th">Container</div><div class="th">Vessel</div><div class="th">ETA *</div><div class="th">Line</div></div>
+        ${rowsHTML}</div>
+      <div class="modal-footer"><button class="btn" onclick="openAddModal()">Back</button>
+        <button class="btn btn-primary" onclick="confirmSave()">Save all ${pendingRows.length} →</button></div>
+    </div></div>`;
+}
+
+async function confirmSave(){
+  const missing=pendingRows.filter(r=>!r.eta);
+  if(missing.length){alert(`Please enter ETA for: ${missing.map(r=>r.container_number).join(", ")}`);return;}
+  showLoading("Saving containers...","Adding to your tracker");
+  const result=await addContainersDB(pendingRows);
+  hideLoading();
+  if(!result.success){alert("Error: "+result.message);return;}
+  closeModal();
+  allContainers=await fetchContainers();
+  renderTable();updateStats();
+}
+
+async function openAddModal(){
+  const c=allContainers.find(x=>x.id===id);if(!c)return;
+  if(!allSuppliers.length) allSuppliers = await fetchSuppliers();
+  const opts=allSuppliers.map(s=>`<option value="${s.id}">${s.name}</option>`).join("");
+  document.getElementById("modalRoot").innerHTML=`
+    <div class="modal-overlay" onclick="closeOverlay(event)"><div class="modal" onclick="event.stopPropagation()">
+      <div class="modal-title">Edit container</div>
+      <div class="form-row"><label class="form-label">Container number</label><input class="form-input" id="eNum" value="${c.container_number}" style="font-family:monospace"></div>
+      <div class="form-grid">
+        <div class="form-row"><label class="form-label">Supplier</label><select class="form-select" id="eSup">${opts}</select></div>
+        <div class="form-row"><label class="form-label">Shipping line</label>
+          <select class="form-select" id="eLine">${["MAERSK","HAPAG","CMA CGM","MSC"].map(l=>`<option ${c.shipping_line===l?"selected":""}>${l}</option>`).join("")}</select></div>
+      </div>
+      <div class="form-row"><label class="form-label">Vessel</label><input class="form-input" id="eVes" value="${c.vessel||""}"></div>
+      <div class="form-grid">
+        <div class="form-row"><label class="form-label">ETA</label><input type="date" class="form-input" id="eEta" value="${c.eta||""}"></div>
+        <div class="form-row"><label class="form-label">Recipient</label>
+          <select class="form-select" id="eRec"><option ${c.recipient==="WAGYINGO"?"selected":""}>WAGYINGO</option><option ${c.recipient==="Lucy"?"selected":""}>Lucy</option></select></div>
+      </div>
+      <div class="modal-footer"><button class="btn" onclick="closeModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="saveEdit('${id}')">Save changes</button></div>
+    </div></div>`;
+}
+
+async function saveEdit(id){
+  const updates={container_number:document.getElementById("eNum").value.trim().toUpperCase(),supplier_id:document.getElementById("eSup").value,shipping_line:document.getElementById("eLine").value,vessel:document.getElementById("eVes").value,eta:document.getElementById("eEta").value,recipient:document.getElementById("eRec").value};
+  showLoading("Saving...","");
+  const r=await updateContainerDB(id,updates);
+  hideLoading();
+  if(!r.success){alert("Error: "+r.message);return;}
+  closeModal();allContainers=await fetchContainers();renderTable();updateStats();
+}
+
+async function doMarkEmptied(id){
+  const c=allContainers.find(x=>x.id===id);
+  if(!c||!confirm(`Mark ${c.container_number} as emptied? It will move to the archive.`))return;
+  showLoading("Moving to archive...","");
+  const r=await markEmptiedDB(c);
+  hideLoading();
+  if(!r.success){alert("Error: "+r.message);return;}
+  activeDetailId=null;allContainers=await fetchContainers();renderTable();updateStats();
+}
+
+async function doDelete(id){
+  const c=allContainers.find(x=>x.id===id);
+  if(!c||!confirm(`Remove ${c.container_number}? This cannot be undone.`))return;
+  showLoading("Removing...","");
+  const r=await deleteContainerDB(id);
+  hideLoading();
+  if(!r.success){alert("Error: "+r.message);return;}
+  activeDetailId=null;allContainers=await fetchContainers();renderTable();updateStats();
+}
+
+async function uploadPL(event,id){
+  const file=event.target.files[0];if(!file)return;
+  showLoading("Uploading packing list...",file.name);
+  const path=`${id}/${file.name}`;
+  const {error}=await db.storage.from("packing-lists").upload(path,file,{upsert:true});
+  if(error){hideLoading();alert("Upload failed: "+error.message);return;}
+  const {data}=db.storage.from("packing-lists").getPublicUrl(path);
+  const r=await updateContainerDB(id,{packing_list_url:data.publicUrl,packing_list_filename:file.name});
+  hideLoading();
+  if(!r.success){alert("Error: "+r.message);return;}
+  allContainers=await fetchContainers();renderTable();
+}
+
+function closeModal(){document.getElementById("modalRoot").innerHTML="";}
+function closeOverlay(e){if(e.target.classList.contains("modal-overlay"))closeModal();}
+
+// ═══════════════════════════════════════════
+// EXPORT (simple versions without CDN)
+// ═══════════════════════════════════════════
+function doExportExcel(){alert("Excel export requires the XLSX library. Coming soon!");}
+function doExportPDF(){alert("PDF export requires the jsPDF library. Coming soon!");}
 </script>
 
 </body>
