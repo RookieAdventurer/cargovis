@@ -1,11 +1,10 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Container Tracker — Suppliers</title>
-<script src="js/supabase.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/supabase-js/2.39.0/supabase.min.js"></script>
 <link rel="stylesheet" href="css/styles.css">
 
 <!-- Inline Supabase init — no external file needed -->
@@ -14,7 +13,7 @@ window.addEventListener("load", function() {
   window.AppDB = {
     supabaseClient: window.supabase.createClient(
       "https://jwprxvobiunfnucrrzuo.supabase.co",
-      "sb_publishable_QaPnj3hornmsAdbHrVM92g_6HPfgUI6"
+      "YOUR_PUBLISHABLE_KEY_HERE"
     ),
     detectShippingLine: function(n) {
       const m = {
@@ -122,3 +121,5 @@ window.addEventListener("load", function() {
 
 </body>
 </html>
+
+
