@@ -82,43 +82,26 @@
 <div id="modalRoot"></div>
 
 <script>
-// ═══════════════════════════════════════════
-// CONFIG — update these with your real values
-// ═══════════════════════════════════════════
 const SUPABASE_URL = "https://jwprxvobiunfnucrrzuo.supabase.co";
 const SUPABASE_KEY = "sb_publishable_QaPnj3hornmsAdbHrVM92g_6HPfgUI6";
-const EDGE_URL     = "https://jwprxvobiunfnucrrzuo.supabase.co/functions/v1/check-password";
 
-// ═══════════════════════════════════════════
-// STATE
-// ═══════════════════════════════════════════
 let db, allContainers = [], allSuppliers = [], activeDetailId = null, currentView = "supplier";
 
-// ═══════════════════════════════════════════
-// INIT — runs after everything has loaded
-// ═══════════════════════════════════════════
 window.addEventListener("load", async function() {
   db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-  // Auth check
   const role = sessionStorage.getItem("ct_role");
   if (!role) { window.location.href = "login.html"; return; }
   document.querySelectorAll(".editor-only").forEach(el => el.style.display = role==="editor"?"":"none");
   document.getElementById("userAvatar").textContent = role==="editor"?"ED":"VW";
   document.getElementById("todayDate").textContent = fmtDate(new Date().toISOString());
-
   await initDashboard();
 });
 
 function handleLogout() { if(confirm("Log out?")){ sessionStorage.clear(); window.location.href="login.html"; } }
 
-// ═══════════════════════════════════════════
-// DATABASE
-// ═══════════════════════════════════════════
 async function fetchContainers()  { const {data}=await db.from("containers").select("*,suppliers(name)").order("eta",{ascending:true}); return data||[]; }
 async function fetchArchived()    { const {data}=await db.from("archived_containers").select("*,suppliers(name)").order("emptied_on",{ascending:false}); return data||[]; }
 async function fetchSuppliers()   { const {data}=await db.from("suppliers").select("*").order("name"); return data||[]; }
-async function addSupplierDB(name){ const {data,error}=await db.from("suppliers").insert({name}).select().single(); if(error)return{success:false,message:error.message}; return{success:true,supplier:data}; }
 
 async function addContainersDB(rows) {
   const payload = rows.map(r=>({...r, status:computeStatus(r.eta), created_by:sessionStorage.getItem("ct_role")||"unknown"}));
@@ -135,7 +118,11 @@ async function updateContainerDB(id,updates) {
   return{success:true,container:data};
 }
 
-async function deleteContainerDB(id) { const {error}=await db.from("containers").delete().eq("id",id); if(error)return{success:false,message:error.message}; return{success:true}; }
+async function deleteContainerDB(id) {
+  const {error}=await db.from("containers").delete().eq("id",id);
+  if(error)return{success:false,message:error.message};
+  return{success:true};
+}
 
 async function markEmptiedDB(c) {
   const row={container_number:c.container_number,vessel:c.vessel,eta:c.eta,shipping_line:c.shipping_line,
@@ -149,9 +136,6 @@ async function markEmptiedDB(c) {
   return{success:true};
 }
 
-// ═══════════════════════════════════════════
-// HELPERS
-// ═══════════════════════════════════════════
 function computeStatus(eta) {
   if(!eta)return"NOT ARRIVED";
   const t=new Date();t.setHours(0,0,0,0);
@@ -178,9 +162,6 @@ function showLoading(t,s){const el=document.getElementById("loadingScreen");docu
 function hideLoading(){document.getElementById("loadingScreen").classList.add("hidden");}
 function setView(v){currentView=v;document.getElementById("viewBySupplier").classList.toggle("active",v==="supplier");document.getElementById("viewByTimeline").classList.toggle("active",v==="timeline");renderTable();}
 
-// ═══════════════════════════════════════════
-// DASHBOARD
-// ═══════════════════════════════════════════
 async function initDashboard() {
   showLoading("Loading your containers...", "Fetching from the database");
   allSuppliers  = await fetchSuppliers();
@@ -312,10 +293,8 @@ function detailHTML(rows){
 function toggleDetail(id){activeDetailId=activeDetailId===id?null:id;renderTable();}
 function viewPL(id){const c=allContainers.find(x=>x.id===id);if(c?.packing_list_url)window.open(c.packing_list_url,"_blank");}
 
-// ═══════════════════════════════════════════
-// ADD MODAL
-// ═══════════════════════════════════════════
-function openAddModal(){
+async function openAddModal(){
+  if(!allSuppliers.length) allSuppliers = await fetchSuppliers();
   const opts=allSuppliers.map(s=>`<option value="${s.id}">${s.name}</option>`).join("");
   document.getElementById("modalRoot").innerHTML=`
     <div class="modal-overlay" onclick="closeOverlay(event)"><div class="modal" onclick="event.stopPropagation()">
@@ -340,9 +319,7 @@ async function runLookup(){
   if(!numbers.length){alert("Please paste at least one container number.");return;}
   const suppId=document.getElementById("supplierSel").value;
   const recipient=document.getElementById("recipientSel").value;
-  showLoading("Looking up containers...",`Checking ${numbers.length} container${numbers.length>1?"s":""}`);
-  pendingRows=numbers.map(n=>({container_number:n,vessel:"",eta:"",shipping_line:detectLine(n),supplier_id:suppId,recipient,auto:false}));
-  hideLoading();
+  pendingRows=numbers.map(n=>({container_number:n,vessel:"",eta:"",shipping_line:detectLine(n),supplier_id:suppId,recipient}));
   renderReviewModal();
 }
 
@@ -380,10 +357,10 @@ async function confirmSave(){
   renderTable();updateStats();
 }
 
-async function openAddModal(){
-  const c=allContainers.find(x=>x.id===id);if(!c)return;
+async function openEditModal(id){
   if(!allSuppliers.length) allSuppliers = await fetchSuppliers();
-  const opts=allSuppliers.map(s=>`<option value="${s.id}">${s.name}</option>`).join("");
+  const c=allContainers.find(x=>x.id===id);if(!c)return;
+  const opts=allSuppliers.map(s=>`<option value="${s.id}" ${s.id===c.supplier_id?"selected":""}>${s.name}</option>`).join("");
   document.getElementById("modalRoot").innerHTML=`
     <div class="modal-overlay" onclick="closeOverlay(event)"><div class="modal" onclick="event.stopPropagation()">
       <div class="modal-title">Edit container</div>
@@ -448,13 +425,9 @@ async function uploadPL(event,id){
 
 function closeModal(){document.getElementById("modalRoot").innerHTML="";}
 function closeOverlay(e){if(e.target.classList.contains("modal-overlay"))closeModal();}
-
-// ═══════════════════════════════════════════
-// EXPORT (simple versions without CDN)
-// ═══════════════════════════════════════════
-function doExportExcel(){alert("Excel export requires the XLSX library. Coming soon!");}
-function doExportPDF(){alert("PDF export requires the jsPDF library. Coming soon!");}
+function doExportExcel(){alert("Excel export coming soon!");}
+function doExportPDF(){alert("PDF export coming soon!");}
 </script>
-
 </body>
 </html>
+
