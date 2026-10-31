@@ -26,131 +26,148 @@
   </div>
   <div class="nav-right">
     <span class="nav-date" id="todayDate"></span>
-    <div class="avatar" id="userAvatar" onclick="handleLogout()" title="Click to log out">··</div>
+    <div class="avatar" id="userAvatar" onclick="handleLogout()" title="Log out">··</div>
   </div>
 </div>
 
 <div class="page-body">
-
-  <div class="toolbar">
-    <div class="search-box">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" stroke-width="2">
-        <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
-      </svg>
-      <input type="text" id="searchInput" placeholder="Search container, vessel, supplier..." oninput="renderArchiveTable()">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px">
+    <div>
+      <div style="font-size:18px;font-weight:500">Archive</div>
+      <div style="font-size:12px;color:var(--grey-text);margin-top:2px">All emptied containers — <span id="totalCount">0</span> total</div>
     </div>
-    <select class="btn" id="filterSupplier" onchange="renderArchiveTable()">
-      <option value="">All suppliers</option>
-    </select>
-    <div style="margin-left:auto; display:flex; gap:8px">
-      <button class="btn" onclick="exportExcel()">↓ Excel</button>
-      <button class="btn" onclick="exportPDF()">↓ PDF</button>
+    <div style="display:flex;gap:8px">
+      <button class="btn" onclick="doExportExcel()">↓ Excel</button>
+      <button class="btn" onclick="doExportPDF()">↓ PDF</button>
     </div>
   </div>
 
-  <div id="contentArea"></div>
+  <div class="toolbar">
+    <div class="search-box">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <input type="text" id="searchInput" placeholder="Search container, vessel, supplier..." oninput="renderTable()">
+    </div>
+    <select class="btn" id="filterSupplier" onchange="renderTable()"><option value="">All suppliers</option></select>
+  </div>
 
+  <div id="contentArea"><div style="padding:40px;text-align:center;color:var(--grey-text-light)">Loading...</div></div>
 </div>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
-<script src="js/supabase-client.js"></script>
-<script src="js/auth.js"></script>
-<script src="js/containers.js"></script>
-<script src="js/export.js"></script>
+
 <script>
-  Auth.requireLogin();
-  Auth.applyRoleVisibility();
-  document.getElementById("userAvatar").textContent = Auth.getRole() === "editor" ? "ED" : "VW";
-  function handleLogout() {
-    if (confirm("Log out of Container Tracker?")) Auth.logout();
+const SUPABASE_URL = "https://jwprxvobiunfnucrrzuo.supabase.co";
+const SUPABASE_KEY = "sb_publishable_QaPnj3hornmsAdbHrVM92g_6HPfgUI6";
+
+let db, allArchived = [], allSuppliers = [];
+
+window.addEventListener("load", async function() {
+  db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  const role = sessionStorage.getItem("ct_role");
+  if (!role) { window.location.href = "login.html"; return; }
+  document.querySelectorAll(".editor-only").forEach(el => el.style.display = role==="editor"?"":"none");
+  document.getElementById("userAvatar").textContent = role==="editor"?"ED":"VW";
+  document.getElementById("todayDate").textContent = fmtDate(new Date().toISOString());
+
+  await initArchive();
+});
+
+function handleLogout() { if(confirm("Log out?")){ sessionStorage.clear(); window.location.href="login.html"; } }
+
+function fmtDate(s) {
+  if(!s) return "—";
+  const d = new Date(s);
+  const days = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+  const months = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+  const n = d.getDate();
+  const sfx = (n>=11&&n<=13)?"th":{1:"st",2:"nd",3:"rd"}[n%10]||"th";
+  return `${days[d.getDay()]}, ${n}${sfx} ${months[d.getMonth()]} ${d.getFullYear()}`;
+}
+
+async function initArchive() {
+  const [archived, suppliers] = await Promise.all([
+    db.from("archived_containers").select("*,suppliers(name)").order("emptied_on", {ascending:false}),
+    db.from("suppliers").select("*").order("name")
+  ]);
+
+  allArchived  = archived.data  || [];
+  allSuppliers = suppliers.data || [];
+
+  document.getElementById("totalCount").textContent = allArchived.length;
+
+  const sel = document.getElementById("filterSupplier");
+  allSuppliers.forEach(s => {
+    const o = document.createElement("option");
+    o.value = s.id; o.textContent = s.name;
+    sel.appendChild(o);
+  });
+
+  renderTable();
+}
+
+function getFiltered() {
+  const q   = (document.getElementById("searchInput")?.value||"").toLowerCase();
+  const sup = document.getElementById("filterSupplier")?.value||"";
+  return allArchived.filter(c => {
+    if (q && !`${c.container_number} ${c.vessel||""} ${c.suppliers?.name||""}`.toLowerCase().includes(q)) return false;
+    if (sup && c.supplier_id !== sup) return false;
+    return true;
+  });
+}
+
+function renderTable() {
+  const el = document.getElementById("contentArea");
+  const filtered = getFiltered();
+
+  if (!filtered.length) {
+    el.innerHTML = `<div style="display:flex;flex-direction:column;align-items:center;padding:60px 24px;gap:12px;text-align:center">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#D1D5DB" stroke-width="1.5"><path d="M21 8v13H3V8"/><path d="M1 3h22v5H1z"/><path d="M10 12h4"/></svg>
+      <div style="font-size:16px;font-weight:500;color:#374151">No archived containers yet</div>
+      <div style="font-size:12px;color:var(--grey-text-light);max-width:260px;line-height:1.7">Containers you mark as emptied will appear here with the date they were emptied</div>
+    </div>`;
+    return;
   }
-  document.getElementById("todayDate").textContent = Containers.formatFullDate(new Date().toISOString());
 
-  let allArchived = [];
-  let allSuppliers = [];
+  // Group by supplier
+  const grouped = {};
+  filtered.forEach(c => {
+    const name = c.suppliers?.name || "Unassigned";
+    if (!grouped[name]) grouped[name] = [];
+    grouped[name].push(c);
+  });
 
-  async function initArchive() {
-    allSuppliers = await Containers.fetchSuppliers();
-    const select = document.getElementById("filterSupplier");
-    allSuppliers.forEach((s) => {
-      const opt = document.createElement("option");
-      opt.value = s.id;
-      opt.textContent = s.name;
-      select.appendChild(opt);
-    });
-
-    allArchived = await Containers.fetchArchivedContainers();
-    renderArchiveTable();
-  }
-
-  function renderArchiveTable() {
-    const q = (document.getElementById("searchInput").value || "").toLowerCase();
-    const supplierFilter = document.getElementById("filterSupplier").value;
-
-    const filtered = allArchived.filter((c) => {
-      if (q) {
-        const haystack = `${c.container_number} ${c.vessel || ""} ${c.suppliers?.name || ""}`.toLowerCase();
-        if (!haystack.includes(q)) return false;
-      }
-      if (supplierFilter && c.supplier_id !== supplierFilter) return false;
-      return true;
-    });
-
-    const container = document.getElementById("contentArea");
-
-    if (filtered.length === 0) {
-      container.innerHTML = `
-        <div class="empty-state">
-          <div class="empty-title">No archived containers yet</div>
-          <div class="empty-sub">Containers you mark as emptied will appear here with the date they were emptied</div>
-        </div>
-      `;
-      return;
-    }
-
-    const grouped = {};
-    filtered.forEach((c) => {
-      const name = c.suppliers ? c.suppliers.name : "Unassigned";
-      if (!grouped[name]) grouped[name] = [];
-      grouped[name].push(c);
-    });
-
-    let html = '<div class="table-wrap">';
-    Object.entries(grouped).forEach(([supplierName, rows], idx) => {
+  let html = '<div class="table-wrap">';
+  Object.entries(grouped).forEach(([name, rows], i) => {
+    html += `
+      <div class="section-header" ${i>0?'style="border-top:0.5px solid var(--grey-border)"':''}>
+        <span class="section-name">${name.toUpperCase()}</span>
+        <span class="section-count">${rows.length} container${rows.length!==1?'s':''}</span>
+      </div>
+      <div class="t-head" style="grid-template-columns:1.4fr 1.5fr 1.7fr 0.9fr 0.8fr 1.1fr">
+        <div class="th">Container no.</div>
+        <div class="th">Vessel</div>
+        <div class="th">ETA</div>
+        <div class="th">Line</div>
+        <div class="th">Recipient</div>
+        <div class="th">Emptied on</div>
+      </div>`;
+    rows.forEach(c => {
       html += `
-        <div class="section-header" style="${idx > 0 ? 'border-top:0.5px solid var(--grey-border)' : ''}">
-          <span class="section-name">${supplierName.toUpperCase()}</span>
-          <span class="section-count">${rows.length} container${rows.length !== 1 ? 's' : ''}</span>
-        </div>
-        <div class="t-head" style="grid-template-columns: 1.4fr 1.5fr 1.7fr 0.9fr 0.8fr 1fr">
-          <div class="th">Container no.</div>
-          <div class="th">Vessel</div>
-          <div class="th">ETA</div>
-          <div class="th">Line</div>
-          <div class="th">Recipient</div>
-          <div class="th">Emptied on</div>
-        </div>
-      `;
-      rows.forEach((c) => {
-        html += `
-          <div class="t-row" style="grid-template-columns: 1.4fr 1.5fr 1.7fr 0.9fr 0.8fr 1fr; cursor:default">
-            <div class="mono">${c.container_number}</div>
-            <div class="muted">${c.vessel || "—"}</div>
-            <div class="muted">${Containers.formatFullDate(c.eta)}</div>
-            <div class="muted">${c.shipping_line || "—"}</div>
-            <div class="muted">${c.recipient || "WAGYINGO"}</div>
-            <div class="muted">${Containers.formatFullDate(c.emptied_on)}</div>
-          </div>
-        `;
-      });
-      html += "";
+        <div class="t-row" style="grid-template-columns:1.4fr 1.5fr 1.7fr 0.9fr 0.8fr 1.1fr;cursor:default">
+          <div class="mono">${c.container_number}</div>
+          <div class="muted">${c.vessel||"—"}</div>
+          <div class="muted">${fmtDate(c.eta)}</div>
+          <div class="muted">${c.shipping_line||"—"}</div>
+          <div class="muted">${c.recipient||"WAGYINGO"}</div>
+          <div class="muted" style="color:#1D4ED8;font-weight:500">${fmtDate(c.emptied_on)}</div>
+        </div>`;
     });
-    html += "</div>";
-    container.innerHTML = html;
-  }
+  });
+  html += "</div>";
+  el.innerHTML = html;
+}
 
-  initArchive();
+function doExportExcel() { alert("Excel export coming soon!"); }
+function doExportPDF()   { alert("PDF export coming soon!"); }
 </script>
 
 </body>
