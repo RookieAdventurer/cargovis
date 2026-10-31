@@ -373,3 +373,19 @@ select.btn { appearance: none; cursor: pointer; }
   .detail-panel { grid-template-columns: 1fr; }
   .stats { grid-template-columns: repeat(2, 1fr); }
 }
+
+/* ============================================
+   CargoVis sidebar layout — preserves original header and empty-state art
+   ============================================ */
+.app-layout { display:flex; min-height:calc(100vh - 56px); }
+.sidebar { width:230px; flex:0 0 230px; background:var(--navy-dark); padding:24px 14px; display:flex; flex-direction:column; gap:7px; }
+.sidebar-heading { color:#9CAFCB; font-size:10px; font-weight:700; letter-spacing:1.1px; padding:8px 12px 5px; }
+.sidebar-link { display:flex; align-items:center; gap:12px; width:100%; min-height:42px; padding:10px 12px; border:0; border-radius:8px; background:transparent; color:rgba(255,255,255,.76); text-decoration:none; text-align:left; font:inherit; font-size:13px; cursor:pointer; }
+.sidebar-link:hover { background:rgba(255,255,255,.09); color:#fff; }
+.sidebar-link.active { background:rgba(255,255,255,.16); color:#fff; font-weight:600; }
+.sidebar-symbol { width:18px; text-align:center; font-size:17px; color:#C7D5EA; }
+.sidebar-divider { height:1px; background:rgba(255,255,255,.14); margin:14px 5px 8px; }
+.sidebar-logout { margin-top:auto; }
+.main-content { min-width:0; flex:1; }
+.main-content .page-body { max-width:none; width:100%; }
+@media(max-width:760px) { .app-layout { display:block; } .sidebar { width:100%; min-height:0; flex-direction:row; flex-wrap:wrap; padding:9px 12px; gap:5px; } .sidebar-heading,.sidebar-divider { display:none; } .sidebar-link { width:auto; min-height:36px; padding:8px 10px; } .sidebar-logout { margin-left:auto; margin-top:0; } .main-content .page-body { padding:20px 14px; } .navbar { padding:0 14px; } .nav-date { font-size:10px; } }
