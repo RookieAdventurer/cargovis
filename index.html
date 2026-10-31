@@ -6,6 +6,7 @@
 <title>Container Tracker — Active</title>
 <script src="js/supabase.js"></script>
 <link rel="stylesheet" href="css/styles.css">
+<style>.viewer .editor-only{display:none!important}input[type=file]{display:none}</style>
 </head>
 <body>
 
@@ -83,7 +84,7 @@
 
 <script>
 const SUPABASE_URL = "https://jwprxvobiunfnucrrzuo.supabase.co";
-const SUPABASE_KEY = "sb_publishable_QaPnj3hornmsAdbHrVM92g_6HPfgUI6";
+const SUPABASE_KEY = "YOUR_PUBLISHABLE_KEY_HERE";
 
 let db, allContainers = [], allSuppliers = [], activeDetailId = null, currentView = "supplier";
 
@@ -91,7 +92,7 @@ window.addEventListener("load", async function() {
   db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   const role = sessionStorage.getItem("ct_role");
   if (!role) { window.location.href = "login.html"; return; }
-  document.querySelectorAll(".editor-only").forEach(el => el.style.display = role==="editor"?"":"none");
+  document.body.classList.toggle("viewer",role!=="editor");
   document.getElementById("userAvatar").textContent = role==="editor"?"ED":"VW";
   document.getElementById("todayDate").textContent = fmtDate(new Date().toISOString());
   await initDashboard();
@@ -99,7 +100,7 @@ window.addEventListener("load", async function() {
 
 function handleLogout() { if(confirm("Log out?")){ sessionStorage.clear(); window.location.href="login.html"; } }
 
-async function fetchContainers()  { const {data}=await db.from("containers").select("*,suppliers(name)").order("eta",{ascending:true}); return data||[]; }
+async function fetchContainers()  { const {data}=await db.from("containers").select("*,suppliers(name)").order("eta",{ascending:true}); return (data||[]).map(c=>({...c,status:computeStatus(c.eta)})); }
 async function fetchArchived()    { const {data}=await db.from("archived_containers").select("*,suppliers(name)").order("emptied_on",{ascending:false}); return data||[]; }
 async function fetchSuppliers()   { const {data}=await db.from("suppliers").select("*").order("name"); return data||[]; }
 
@@ -145,7 +146,7 @@ function computeStatus(eta) {
 
 function fmtDate(s) {
   if(!s)return"—";
-  const d=new Date(s);
+  const d=new Date(/^\d{4}-\d{2}-\d{2}$/.test(s)?s+"T00:00:00":s);
   const days=["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
   const months=["January","February","March","April","May","June","July","August","September","October","November","December"];
   const n=d.getDate();
@@ -217,8 +218,7 @@ function supplierHTML(containers) {
       <div class="t-head" style="grid-template-columns:1.4fr 1.5fr 1.9fr 0.9fr 0.85fr 0.9fr">
         <div class="th">Container no.</div><div class="th">Vessel</div><div class="th">ETA</div><div class="th">Line</div><div class="th">Status</div><div class="th">Packing list</div>
       </div>`;
-    rows.forEach(c=>{html+=rowHTML(c);});
-    html+=detailHTML(rows);
+    rows.forEach(c=>{html+=rowHTML(c)+detailHTML(c);});
   });
   html+="</div>";return html;
 }
@@ -247,7 +247,7 @@ function timelineHTML(containers) {
       html+=`<div class="t-row" style="grid-template-columns:1.3fr 1.3fr 1.6fr 0.8fr 0.8fr 1fr" onclick="toggleDetail('${c.id}')">
         <div class="mono">${c.container_number}</div><div class="muted">${c.vessel||"—"}</div><div class="muted">${fmtDate(c.eta)}</div>
         <div class="muted">${c.suppliers?.name||"—"}</div><div class="muted">${c.shipping_line||"—"}</div>
-        <div><span class="countdown-chip ${chip}">${label}</span></div></div>`;
+        <div><span class="countdown-chip ${chip}">${label}</span></div></div>`+detailHTML(c);
     });
     html+="</div></div>";
   });
@@ -265,13 +265,12 @@ function rowHTML(c){
     <div>${pl}</div></div>`;
 }
 
-function detailHTML(rows){
-  if(!activeDetailId)return"";
-  const c=rows.find(r=>r.id===activeDetailId);if(!c)return"";
+function detailHTML(c){
+  if(c.id!==activeDetailId)return"";
   const pl=c.packing_list_url
-    ?`<div class="pl-file-row"><div style="width:28px;height:28px;background:#DBEAFE;border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1D4ED8" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div><div style="flex:1"><div class="pl-file-name">${c.packing_list_filename||"Packing list"}</div></div><div style="display:flex;gap:6px"><button class="pl-action-btn" onclick="viewPL('${c.id}')">View</button><button class="pl-action-btn editor-only" onclick="document.getElementById('pu_${c.id}').click()">Replace</button></div></div><input type="file" id="pu_${c.id}" class="hidden" onchange="uploadPL(event,'${c.id}')">`
-    :`<div class="pl-upload-area editor-only" onclick="document.getElementById('pu_${c.id}').click()">Click to upload packing list (PDF, Word, or Excel)</div><input type="file" id="pu_${c.id}" class="hidden" onchange="uploadPL(event,'${c.id}')"><p style="font-size:10px;color:#D1D5DB;font-style:italic;margin-top:8px">No packing list uploaded yet</p>`;
-  return`<div class="detail-panel">
+    ?`<div class="pl-file-row"><div style="width:28px;height:28px;background:#DBEAFE;border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1D4ED8" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div><div style="flex:1"><div class="pl-file-name">${c.packing_list_filename||"Packing list"}</div></div><div style="display:flex;gap:6px"><button class="pl-action-btn" onclick="viewPL('${c.id}')">View</button><button class="pl-action-btn" onclick="viewPL('${c.id}',true)">↓</button><button class="pl-action-btn editor-only" onclick="document.getElementById('pu_${c.id}').click()">Replace</button></div></div><input type="file" id="pu_${c.id}" onchange="uploadPL(event,'${c.id}')">`
+    :`<div class="pl-upload-area editor-only" onclick="document.getElementById('pu_${c.id}').click()">Click to upload packing list (PDF, Word, or Excel)</div><input type="file" id="pu_${c.id}" onchange="uploadPL(event,'${c.id}')"><p style="font-size:10px;color:#D1D5DB;font-style:italic;margin-top:8px">No packing list uploaded yet</p>`;
+  return`<div class="detail-panel open">
     <div><div class="detail-section-title">Shipment info</div><div class="detail-card">
       <div class="detail-row"><span class="detail-key">Container</span><span class="detail-val mono">${c.container_number}</span></div>
       <div class="detail-row"><span class="detail-key">Vessel</span><span class="detail-val">${c.vessel||"—"}</span></div>
@@ -291,7 +290,13 @@ function detailHTML(rows){
 }
 
 function toggleDetail(id){activeDetailId=activeDetailId===id?null:id;renderTable();}
-function viewPL(id){const c=allContainers.find(x=>x.id===id);if(c?.packing_list_url)window.open(c.packing_list_url,"_blank");}
+async function viewPL(id,dl){
+  const c=allContainers.find(x=>x.id===id);if(!c?.packing_list_url)return;
+  const w=dl?null:window.open("","_blank");
+  const {data,error}=await db.storage.from("packing-lists").createSignedUrl(c.packing_list_url,300,dl?{download:c.packing_list_filename||true}:undefined);
+  if(error){if(w)w.close();alert("Could not open file: "+error.message);return;}
+  if(dl)location.href=data.signedUrl;else w.location.href=data.signedUrl;
+}
 
 async function openAddModal(){
   if(!allSuppliers.length) allSuppliers = await fetchSuppliers();
@@ -413,11 +418,10 @@ async function doDelete(id){
 async function uploadPL(event,id){
   const file=event.target.files[0];if(!file)return;
   showLoading("Uploading packing list...",file.name);
-  const path=`${id}/${file.name}`;
-  const {error}=await db.storage.from("packing-lists").upload(path,file,{upsert:true});
+  const path=`${id}/${Date.now()}_${file.name.replace(/[^\w.\-]+/g,"_")}`;
+  const {error}=await db.storage.from("packing-lists").upload(path,file);
   if(error){hideLoading();alert("Upload failed: "+error.message);return;}
-  const {data}=db.storage.from("packing-lists").getPublicUrl(path);
-  const r=await updateContainerDB(id,{packing_list_url:data.publicUrl,packing_list_filename:file.name});
+  const r=await updateContainerDB(id,{packing_list_url:path,packing_list_filename:file.name});
   hideLoading();
   if(!r.success){alert("Error: "+r.message);return;}
   allContainers=await fetchContainers();renderTable();
@@ -430,4 +434,3 @@ function doExportPDF(){alert("PDF export coming soon!");}
 </script>
 </body>
 </html>
-
