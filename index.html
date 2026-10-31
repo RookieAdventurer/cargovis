@@ -39,17 +39,22 @@
     </div>
     <span class="nav-title">Container Tracker</span>
   </div>
-  <div class="nav-links">
-    <a href="index.html" class="nav-link active">Active</a>
-    <a href="archive.html" class="nav-link">Archive</a>
-    <a href="suppliers.html" class="nav-link editor-only">Suppliers</a>
-  </div>
   <div class="nav-right">
     <span class="nav-date" id="todayDate"></span>
     <div class="avatar" id="userAvatar" onclick="handleLogout()" title="Log out">··</div>
   </div>
 </div>
-
+<div class="app-layout">
+  <aside class="sidebar">
+    <div class="sidebar-heading">WORKSPACE</div>
+    <a href="index.html" class="sidebar-link active"><span class="sidebar-symbol">▦</span> Active</a>
+    <a href="archive.html" class="sidebar-link"><span class="sidebar-symbol">▤</span> Archive</a>
+    <a href="suppliers.html" class="sidebar-link editor-only"><span class="sidebar-symbol">♧</span> Suppliers</a>
+    <div class="sidebar-divider"></div>
+    <div class="sidebar-heading">ACCOUNT</div>
+    <button class="sidebar-link sidebar-logout" onclick="handleLogout()"><span class="sidebar-symbol">↪</span> Log out</button>
+  </aside>
+  <main class="main-content">
 <div class="page-body">
   <div class="stats">
     <div class="stat" style="border-left-color:#1F3864"><div class="stat-label">Active containers</div><div class="stat-value" id="statActive">—</div><div class="stat-sub" id="statActiveSub">across all suppliers</div></div>
@@ -79,6 +84,8 @@
     </div>
   </div>
   <div id="contentArea"></div>
+</div>
+  </main>
 </div>
 <div id="modalRoot"></div>
 
