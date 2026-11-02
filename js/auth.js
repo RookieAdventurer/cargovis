@@ -1,6 +1,6 @@
-
 // auth.js
-// Individual CargoVis login using Supabase Auth and user profiles.
+// CargoVis individual username/password authentication.
+// Uses Supabase Auth and the public.profiles table.
 
 const CARGOVIS_EMAIL_DOMAIN = "@cargovis-login.example.com";
 
@@ -14,8 +14,14 @@ function getClient() {
   return client;
 }
 
+// Read the cached role for interface display only.
+// Database permissions must always be enforced by Supabase RLS.
 function getRole() {
   return sessionStorage.getItem("ct_role");
+}
+
+function getUsername() {
+  return sessionStorage.getItem("ct_username");
 }
 
 function isAdmin() {
@@ -30,6 +36,11 @@ function isLoggedIn() {
   return !!getRole();
 }
 
+function clearCargoVisSession() {
+  sessionStorage.removeItem("ct_role");
+  sessionStorage.removeItem("ct_username");
+}
+
 async function getProfile(userId) {
   const { data, error } = await getClient()
     .from("profiles")
@@ -37,18 +48,43 @@ async function getProfile(userId) {
     .eq("id", userId)
     .single();
 
-  if (error) throw error;
+  if (error) {
+    throw error;
+  }
+
+  if (!data) {
+    throw new Error("User profile not found.");
+  }
+
   return data;
 }
 
+function saveProfileSession(profile) {
+  sessionStorage.setItem("ct_role", profile.role);
+  sessionStorage.setItem("ct_username", profile.username);
+}
+
+// --------------------------------------------------
+// LOGIN
+// --------------------------------------------------
+
 async function login(username, password) {
   try {
-    const cleanUsername = String(username || "").trim().toLowerCase();
+    const cleanUsername = String(username || "")
+      .trim()
+      .toLowerCase();
 
     if (!cleanUsername || !password) {
       return {
         success: false,
         message: "Enter your username and password."
+      };
+    }
+
+    if (!/^[a-z0-9_]{3,30}$/.test(cleanUsername)) {
+      return {
+        success: false,
+        message: "Please enter a valid username."
       };
     }
 
@@ -59,7 +95,7 @@ async function login(username, password) {
       password
     });
 
-    if (error) {
+    if (error || !data?.user) {
       return {
         success: false,
         message: "Incorrect username or password."
@@ -70,7 +106,9 @@ async function login(username, password) {
 
     try {
       profile = await getProfile(data.user.id);
-    } catch (err) {
+    } catch (profileError) {
+      console.error("CargoVis profile error:", profileError);
+
       await getClient().auth.signOut();
 
       return {
@@ -88,13 +126,13 @@ async function login(username, password) {
       };
     }
 
-    sessionStorage.setItem("ct_role", profile.role);
-    sessionStorage.setItem("ct_username", profile.username);
+    saveProfileSession(profile);
 
     return {
       success: true,
       role: profile.role,
-      profile
+      profile,
+      mustChangePassword: profile.must_change_password
     };
 
   } catch (err) {
@@ -107,53 +145,49 @@ async function login(username, password) {
   }
 }
 
+// --------------------------------------------------
+// RESTORE EXISTING SESSION
+// --------------------------------------------------
+
 async function restoreSession() {
   try {
     const { data, error } = await getClient().auth.getSession();
 
-    if (error || !data.session) {
-      sessionStorage.removeItem("ct_role");
-      sessionStorage.removeItem("ct_username");
-
+    if (error || !data?.session?.user) {
+      clearCargoVisSession();
       return { success: false };
     }
 
     const profile = await getProfile(data.session.user.id);
 
     if (!profile.is_active) {
-      await logout();
+      await getClient().auth.signOut();
+      clearCargoVisSession();
+
       return { success: false };
     }
 
-    sessionStorage.setItem("ct_role", profile.role);
-    sessionStorage.setItem("ct_username", profile.username);
+    saveProfileSession(profile);
 
     return {
       success: true,
       role: profile.role,
-      profile
+      profile,
+      mustChangePassword: profile.must_change_password
     };
 
   } catch (err) {
     console.error("CargoVis session restore error:", err);
 
-    sessionStorage.removeItem("ct_role");
-    sessionStorage.removeItem("ct_username");
+    clearCargoVisSession();
 
     return { success: false };
   }
 }
 
-async function logout() {
-  try {
-    await getClient().auth.signOut();
-  } catch (err) {
-    console.error("CargoVis logout error:", err);
-  }
-
-  sessionStorage.clear();
-  window.location.href = "login.html";
-}
+// --------------------------------------------------
+// PROTECT PAGES
+// --------------------------------------------------
 
 async function requireLogin() {
   const result = await restoreSession();
@@ -166,6 +200,25 @@ async function requireLogin() {
   return true;
 }
 
+// --------------------------------------------------
+// LOGOUT
+// --------------------------------------------------
+
+async function logout() {
+  try {
+    await getClient().auth.signOut();
+  } catch (err) {
+    console.error("CargoVis logout error:", err);
+  }
+
+  clearCargoVisSession();
+  window.location.href = "login.html";
+}
+
+// --------------------------------------------------
+// ROLE-BASED INTERFACE VISIBILITY
+// --------------------------------------------------
+
 function applyRoleVisibility() {
   const role = getRole();
 
@@ -175,14 +228,20 @@ function applyRoleVisibility() {
   });
 
   document.querySelectorAll(".admin-only").forEach(element => {
-    element.style.display = role === "admin" ? "" : "none";
+    element.style.display =
+      role === "admin" ? "" : "none";
   });
 }
+
+// --------------------------------------------------
+// PUBLIC AUTH API
+// --------------------------------------------------
 
 window.Auth = {
   login,
   logout,
   getRole,
+  getUsername,
   isAdmin,
   isEditor,
   isLoggedIn,
