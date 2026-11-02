@@ -389,3 +389,42 @@ select.btn { appearance: none; cursor: pointer; }
 .main-content { min-width:0; flex:1; }
 .main-content .page-body { max-width:none; width:100%; }
 @media(max-width:760px) { .app-layout { display:block; } .sidebar { width:100%; min-height:0; flex-direction:row; flex-wrap:wrap; padding:9px 12px; gap:5px; } .sidebar-heading,.sidebar-divider { display:none; } .sidebar-link { width:auto; min-height:36px; padding:8px 10px; } .sidebar-logout { margin-left:auto; margin-top:0; } .main-content .page-body { padding:20px 14px; } .navbar { padding:0 14px; } .nav-date { font-size:10px; } }
+
+/* CargoVis login ship sailing animation */
+.ship-track {
+  animation: shipSail 22s linear infinite;
+  will-change: transform;
+}
+
+@keyframes shipSail {
+  0% {
+    transform: translateX(-260px);
+  }
+
+  100% {
+    transform: translateX(calc(100vw + 260px));
+  }
+}
+
+/* Gentle movement as the ship sails */
+.ship-wrap {
+  animation: shipRock 3s ease-in-out infinite;
+  transform-origin: center bottom;
+}
+
+@keyframes shipRock {
+  0%, 100% {
+    transform: rotate(-1deg) translateY(0);
+  }
+
+  50% {
+    transform: rotate(1deg) translateY(-4px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ship-track,
+  .ship-wrap {
+    animation: none;
+  }
+}
