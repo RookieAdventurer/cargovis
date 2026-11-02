@@ -1,9 +1,10 @@
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Container Tracker — Sign in</title>
+<title>CargoVis — Sign in</title>
 <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
@@ -26,7 +27,7 @@
       </svg>
     </div>
 
-    <div class="login-title">Container Tracker</div>
+    <div class="login-title">CargoVis</div>
     <div class="login-tagline">Authorised access only</div>
 
     <div class="login-error" id="loginError"></div>
@@ -140,8 +141,9 @@
 
 </div>
 
-<!-- Load the existing Supabase client before auth.js -->
+<!-- Load scripts in the correct order -->
 <script src="js/supabase.js"></script>
+<script src="js/supabase-client.js"></script>
 <script src="js/auth.js"></script>
 
 <script>
@@ -212,11 +214,13 @@
       passwordInput.focus();
 
     } catch (error) {
+      console.error('Login error:', error);
       showError('Unable to sign in. Please try again.');
-    }
 
-    loginBtn.disabled = false;
-    loginBtn.textContent = 'Sign in';
+    } finally {
+      loginBtn.disabled = false;
+      loginBtn.textContent = 'Sign in';
+    }
   }
 
   // Press Enter in username field to move to password
@@ -233,13 +237,18 @@
     }
   });
 
-  // If a valid existing login is present, go to dashboard
+  // Restore an existing Supabase session
   (async function checkExistingLogin() {
-    const result = await Auth.restoreSession();
+    try {
+      const result = await Auth.restoreSession();
 
-    if (result.success) {
-      window.location.href = 'index.html';
-    } else {
+      if (result.success) {
+        window.location.href = 'index.html';
+      } else {
+        usernameInput.focus();
+      }
+    } catch (error) {
+      console.error('Session check error:', error);
       usernameInput.focus();
     }
   })();
@@ -247,3 +256,4 @@
 
 </body>
 </html>
+```
