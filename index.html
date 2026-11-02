@@ -1,12 +1,26 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Container Tracker — Active</title>
+<title>CargoVis — Active</title>
+
 <script src="js/supabase.js"></script>
+<script src="js/supabase-client.js"></script>
+<script src="js/auth.js"></script>
+
 <link rel="stylesheet" href="css/styles.css">
-<style>.viewer .editor-only{display:none!important}input[type=file]{display:none}</style>
+
+<style>
+.viewer .editor-only,
+.viewer .admin-only {
+  display: none !important;
+}
+input[type=file] {
+  display: none;
+}
+</style>
 </head>
 <body>
 
@@ -14,7 +28,9 @@
   <div style="text-align:center">
     <div class="loading-title" id="loadingTitle">Loading...</div>
     <div class="loading-sub" id="loadingSub"></div>
-    <div class="loading-progress"><div class="loading-progress-fill"></div></div>
+    <div class="loading-progress">
+      <div class="loading-progress-fill"></div>
+    </div>
   </div>
   <svg width="200" height="110" viewBox="0 0 200 110" fill="none" style="margin-top:10px">
     <rect x="90" y="0" width="8" height="80" fill="#4A7FBF"/>
@@ -33,411 +49,1071 @@
   <div class="nav-left">
     <div class="nav-icon">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2">
-        <rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8h4l3 3v5h-7V8z"/>
-        <circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/>
+        <rect x="1" y="3" width="15" height="13" rx="1"/>
+        <path d="M16 8h4l3 3v5h-7V8z"/>
+        <circle cx="5.5" cy="18.5" r="2.5"/>
+        <circle cx="18.5" cy="18.5" r="2.5"/>
       </svg>
     </div>
-    <span class="nav-title">Container Tracker</span>
+    <span class="nav-title">CargoVis</span>
   </div>
   <div class="nav-right">
     <span class="nav-date" id="todayDate"></span>
     <div class="avatar" id="userAvatar" onclick="handleLogout()" title="Log out">··</div>
   </div>
 </div>
+
 <div class="app-layout">
   <aside class="sidebar">
     <div class="sidebar-heading">WORKSPACE</div>
-    <a href="index.html" class="sidebar-link active"><span class="sidebar-symbol">▦</span> Active</a>
-    <a href="archive.html" class="sidebar-link"><span class="sidebar-symbol">▤</span> Archive</a>
-    <a href="suppliers.html" class="sidebar-link editor-only"><span class="sidebar-symbol">♧</span> Suppliers</a>
+
+    <a href="index.html" class="sidebar-link active">
+      <span class="sidebar-symbol">▦</span> Active
+    </a>
+
+    <a href="archive.html" class="sidebar-link">
+      <span class="sidebar-symbol">▤</span> Archive
+    </a>
+
+    <a href="suppliers.html" class="sidebar-link editor-only">
+      <span class="sidebar-symbol">♧</span> Suppliers
+    </a>
+
     <div class="sidebar-divider"></div>
+
     <div class="sidebar-heading">ACCOUNT</div>
-    <button class="sidebar-link sidebar-logout" onclick="handleLogout()"><span class="sidebar-symbol">↪</span> Log out</button>
+
+    <button class="sidebar-link sidebar-logout" onclick="handleLogout()">
+      <span class="sidebar-symbol">↪</span> Log out
+    </button>
   </aside>
+
   <main class="main-content">
-<div class="page-body">
-  <div class="stats">
-    <div class="stat" style="border-left-color:#1F3864"><div class="stat-label">Active containers</div><div class="stat-value" id="statActive">—</div><div class="stat-sub" id="statActiveSub">across all suppliers</div></div>
-    <div class="stat" style="border-left-color:#059669"><div class="stat-label">Arrived</div><div class="stat-value" id="statArrived" style="color:#065F46">—</div><div class="stat-sub">ready to empty</div></div>
-    <div class="stat" style="border-left-color:#DC2626"><div class="stat-label">Not yet arrived</div><div class="stat-value" id="statNotArrived" style="color:#991B1B">—</div><div class="stat-sub">in transit</div></div>
-    <div class="stat" style="border-left-color:#93C5FD"><div class="stat-label">Archived</div><div class="stat-value" id="statArchived" style="color:#1D4ED8">—</div><div class="stat-sub">emptied containers</div></div>
-  </div>
-  <div class="toolbar">
-    <div class="search-box">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-      <input type="text" id="searchInput" placeholder="Search container, vessel, supplier..." oninput="renderTable()">
+    <div class="page-body">
+
+      <div class="stats">
+        <div class="stat" style="border-left-color:#1F3864">
+          <div class="stat-label">Active containers</div>
+          <div class="stat-value" id="statActive">—</div>
+          <div class="stat-sub" id="statActiveSub">across all suppliers</div>
+        </div>
+
+        <div class="stat" style="border-left-color:#059669">
+          <div class="stat-label">Arrived</div>
+          <div class="stat-value" id="statArrived" style="color:#065F46">—</div>
+          <div class="stat-sub">ready to empty</div>
+        </div>
+
+        <div class="stat" style="border-left-color:#DC2626">
+          <div class="stat-label">Not yet arrived</div>
+          <div class="stat-value" id="statNotArrived" style="color:#991B1B">—</div>
+          <div class="stat-sub">in transit</div>
+        </div>
+
+        <div class="stat" style="border-left-color:#93C5FD">
+          <div class="stat-label">Archived</div>
+          <div class="stat-value" id="statArchived" style="color:#1D4ED8">—</div>
+          <div class="stat-sub">emptied containers</div>
+        </div>
+      </div>
+
+      <div class="toolbar">
+        <div class="search-box">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" stroke-width="2">
+            <circle cx="11" cy="11" r="8"/>
+            <path d="m21 21-4.35-4.35"/>
+          </svg>
+          <input type="text" id="searchInput" placeholder="Search container, vessel, supplier..." oninput="renderTable()">
+        </div>
+
+        <select class="btn" id="filterSupplier" onchange="renderTable()">
+          <option value="">All suppliers</option>
+        </select>
+
+        <select class="btn" id="filterStatus" onchange="renderTable()">
+          <option value="">All statuses</option>
+          <option value="ARRIVED">Arrived</option>
+          <option value="NOT ARRIVED">Not arrived</option>
+        </select>
+
+        <div class="timeline-toggle">
+          <button id="viewBySupplier" class="active" onclick="setView('supplier')">By supplier</button>
+          <button id="viewByTimeline" onclick="setView('timeline')">Timeline</button>
+        </div>
+
+        <div style="margin-left:auto;display:flex;gap:8px">
+          <button class="btn" onclick="doExportExcel()">↓ Excel</button>
+          <button class="btn" onclick="doExportPDF()">↓ PDF</button>
+          <button class="btn btn-primary editor-only" onclick="openAddModal()">+ Add containers</button>
+        </div>
+      </div>
+
+      <div id="contentArea"></div>
     </div>
-    <select class="btn" id="filterSupplier" onchange="renderTable()"><option value="">All suppliers</option></select>
-    <select class="btn" id="filterStatus" onchange="renderTable()">
-      <option value="">All statuses</option>
-      <option value="ARRIVED">Arrived</option>
-      <option value="NOT ARRIVED">Not arrived</option>
-    </select>
-    <div class="timeline-toggle">
-      <button id="viewBySupplier" class="active" onclick="setView('supplier')">By supplier</button>
-      <button id="viewByTimeline" onclick="setView('timeline')">Timeline</button>
-    </div>
-    <div style="margin-left:auto;display:flex;gap:8px">
-      <button class="btn" onclick="doExportExcel()">↓ Excel</button>
-      <button class="btn" onclick="doExportPDF()">↓ PDF</button>
-      <button class="btn btn-primary editor-only" onclick="openAddModal()">+ Add containers</button>
-    </div>
-  </div>
-  <div id="contentArea"></div>
-</div>
   </main>
 </div>
+
 <div id="modalRoot"></div>
 
 <script>
-const SUPABASE_URL = "https://jwprxvobiunfnucrrzuo.supabase.co";
-const SUPABASE_KEY = "sb_publishable_QaPnj3hornmsAdbHrVM92g_6HPfgUI6";
+"use strict";
 
-let db, allContainers = [], allSuppliers = [], activeDetailId = null, currentView = "supplier";
+// --------------------------------------------------
+// APPLICATION STATE
+// --------------------------------------------------
+
+let db;
+let allContainers = [];
+let allSuppliers = [];
+let activeDetailId = null;
+let currentView = "supplier";
+let currentProfile = null;
+let pendingRows = [];
+
+// --------------------------------------------------
+// INITIALISATION AND AUTHENTICATION
+// --------------------------------------------------
 
 window.addEventListener("load", async function() {
-  db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-  const role = sessionStorage.getItem("ct_role");
-  if (!role) { window.location.href = "login.html"; return; }
-  document.body.classList.toggle("viewer",role!=="editor");
-  document.getElementById("userAvatar").textContent = role==="editor"?"ED":"VW";
-  document.getElementById("todayDate").textContent = fmtDate(new Date().toISOString());
-  await initDashboard();
+  try {
+    showLoading("Checking your account...", "Verifying your session");
+
+    const session = await Auth.restoreSession();
+
+    if (!session.success) {
+      window.location.href = "login.html";
+      return;
+    }
+
+    currentProfile = session.profile;
+    db = window.AppDB.supabaseClient;
+
+    document.body.classList.toggle(
+      "viewer",
+      currentProfile.role === "viewer"
+    );
+
+    Auth.applyRoleVisibility();
+
+    const avatar = document.getElementById("userAvatar");
+    avatar.textContent = currentProfile.username
+      .substring(0, 2)
+      .toUpperCase();
+
+    avatar.title = currentProfile.username + " — " +
+      currentProfile.role + " — Log out";
+
+    document.getElementById("todayDate").textContent =
+      fmtDate(new Date().toISOString());
+
+    await initDashboard();
+
+  } catch (error) {
+    console.error("Dashboard initialisation error:", error);
+    hideLoading();
+    alert("Unable to load CargoVis. Please refresh the page.");
+  }
 });
 
-function handleLogout() { if(confirm("Log out?")){ sessionStorage.clear(); window.location.href="login.html"; } }
-
-async function fetchContainers()  { const {data}=await db.from("containers").select("*,suppliers(name)").order("eta",{ascending:true}); return (data||[]).map(c=>({...c,status:computeStatus(c.eta)})); }
-async function fetchArchived()    { const {data}=await db.from("archived_containers").select("*,suppliers(name)").order("emptied_on",{ascending:false}); return data||[]; }
-async function fetchSuppliers()   { const {data}=await db.from("suppliers").select("*").order("name"); return data||[]; }
-
-async function addContainersDB(rows) {
-  const payload = rows.map(r=>({...r, status:computeStatus(r.eta), created_by:sessionStorage.getItem("ct_role")||"unknown"}));
-  const {data,error}=await db.from("containers").insert(payload).select();
-  if(error)return{success:false,message:error.message};
-  return{success:true,containers:data};
+async function handleLogout() {
+  if (confirm("Log out of CargoVis?")) {
+    await Auth.logout();
+  }
 }
 
-async function updateContainerDB(id,updates) {
-  const payload={...updates,updated_at:new Date().toISOString()};
-  if(updates.eta)payload.status=computeStatus(updates.eta);
-  const {data,error}=await db.from("containers").update(payload).eq("id",id).select().single();
-  if(error)return{success:false,message:error.message};
-  return{success:true,container:data};
+// --------------------------------------------------
+// DATABASE FUNCTIONS
+// --------------------------------------------------
+
+async function fetchContainers() {
+  const {data, error} = await db
+    .from("containers")
+    .select("*,suppliers(name)")
+    .order("eta", {ascending:true});
+
+  if (error) throw error;
+
+  return (data || []).map(c => ({
+    ...c,
+    status: computeStatus(c)
+  }));
+}
+
+async function fetchArchived() {
+  const {data, error} = await db
+    .from("archived_containers")
+    .select("*,suppliers(name)")
+    .order("emptied_on", {ascending:false});
+
+  if (error) throw error;
+  return data || [];
+}
+
+async function fetchSuppliers() {
+  const {data, error} = await db
+    .from("suppliers")
+    .select("*")
+    .order("name");
+
+  if (error) throw error;
+  return data || [];
+}
+
+async function addContainersDB(rows) {
+  const payload = rows.map(r => ({
+    ...r,
+    status: "NOT ARRIVED",
+    created_by: currentProfile?.username || null
+  }));
+
+  const {data, error} = await db
+    .from("containers")
+    .insert(payload)
+    .select();
+
+  if (error) return {success:false, message:error.message};
+
+  return {success:true, containers:data};
+}
+
+async function updateContainerDB(id, updates) {
+  const payload = {
+    ...updates,
+    updated_at: new Date().toISOString()
+  };
+
+  if (updates.eta) {
+    payload.status = "NOT ARRIVED";
+  }
+
+  const {data, error} = await db
+    .from("containers")
+    .update(payload)
+    .eq("id", id)
+    .select()
+    .single();
+
+  if (error) return {success:false, message:error.message};
+
+  return {success:true, container:data};
 }
 
 async function deleteContainerDB(id) {
-  const {error}=await db.from("containers").delete().eq("id",id);
-  if(error)return{success:false,message:error.message};
-  return{success:true};
+  const {error} = await db
+    .from("containers")
+    .delete()
+    .eq("id", id);
+
+  if (error) return {success:false, message:error.message};
+
+  return {success:true};
 }
 
 async function markEmptiedDB(c) {
-  const row={container_number:c.container_number,vessel:c.vessel,eta:c.eta,shipping_line:c.shipping_line,
-    supplier_id:c.supplier_id,recipient:c.recipient,packing_list_url:c.packing_list_url,
-    packing_list_filename:c.packing_list_filename,created_at:c.created_at,
-    emptied_on:new Date().toISOString().split("T")[0],emptied_by:sessionStorage.getItem("ct_role")||"unknown"};
-  const {error:e1}=await db.from("archived_containers").insert(row);
-  if(e1)return{success:false,message:e1.message};
-  const {error:e2}=await db.from("containers").delete().eq("id",c.id);
-  if(e2)return{success:false,message:e2.message};
-  return{success:true};
+  const row = {
+    container_number: c.container_number,
+    vessel: c.vessel,
+    eta: c.eta,
+    shipping_line: c.shipping_line,
+    supplier_id: c.supplier_id,
+    shipment_id: c.shipment_id || null,
+    recipient: c.recipient,
+    packing_list_url: c.packing_list_url,
+    packing_list_filename: c.packing_list_filename,
+    created_at: c.created_at,
+    emptied_on: new Date().toISOString().split("T")[0],
+    emptied_by: currentProfile?.username || null
+  };
+
+  const {error:e1} = await db
+    .from("archived_containers")
+    .insert(row);
+
+  if (e1) return {success:false, message:e1.message};
+
+  const {error:e2} = await db
+    .from("containers")
+    .delete()
+    .eq("id", c.id);
+
+  if (e2) {
+    return {
+      success:false,
+      message:"The archive copy was created, but the active record could not be removed. Please contact the administrator before trying again. " + e2.message
+    };
+  }
+
+  return {success:true};
 }
 
-function computeStatus(eta) {
-  if(!eta)return"NOT ARRIVED";
-  const t=new Date();t.setHours(0,0,0,0);
-  const d=new Date(eta);d.setHours(0,0,0,0);
-  return d<=t?"ARRIVED":"NOT ARRIVED";
+// --------------------------------------------------
+// STATUS AND DATE HELPERS
+// --------------------------------------------------
+
+// An estimated arrival date is not proof of actual arrival.
+// Until an actual arrival milestone is recorded, the container
+// remains NOT ARRIVED.
+function computeStatus(container) {
+  if (typeof container === "string") return "NOT ARRIVED";
+
+  if (container?.actual_arrival_at || container?.arrived_at) {
+    return "ARRIVED";
+  }
+
+  return "NOT ARRIVED";
 }
 
 function fmtDate(s) {
-  if(!s)return"—";
-  const d=new Date(/^\d{4}-\d{2}-\d{2}$/.test(s)?s+"T00:00:00":s);
-  const days=["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
-  const months=["January","February","March","April","May","June","July","August","September","October","November","December"];
-  const n=d.getDate();
-  const sfx=(n>=11&&n<=13)?"th":{1:"st",2:"nd",3:"rd"}[n%10]||"th";
-  return`${days[d.getDay()]}, ${n}${sfx} ${months[d.getMonth()]} ${d.getFullYear()}`;
+  if (!s) return "—";
+
+  const d = new Date(
+    /^\d{4}-\d{2}-\d{2}$/.test(s) ? s + "T00:00:00" : s
+  );
+
+  if (Number.isNaN(d.getTime())) return "—";
+
+  const days = [
+    "Sunday","Monday","Tuesday","Wednesday",
+    "Thursday","Friday","Saturday"
+  ];
+
+  const months = [
+    "January","February","March","April","May","June",
+    "July","August","September","October","November","December"
+  ];
+
+  const n = d.getDate();
+  const suffix = (n >= 11 && n <= 13)
+    ? "th"
+    : ({1:"st",2:"nd",3:"rd"}[n % 10] || "th");
+
+  return `${days[d.getDay()]}, ${n}${suffix} ${months[d.getMonth()]} ${d.getFullYear()}`;
 }
 
 function detectLine(n) {
-  const m={MRKU:"MAERSK",MSKU:"MAERSK",MSDU:"MAERSK",MRSU:"MAERSK",SUDU:"MAERSK",SEAU:"MAERSK",HASU:"MAERSK",TRHU:"MAERSK",TXGU:"HAPAG",HLXU:"HAPAG",HLCU:"HAPAG",SEKU:"CMA CGM",CMAU:"CMA CGM",CGMU:"CMA CGM",MSCU:"MSC",MEDU:"MSC"};
-  return m[n.trim().toUpperCase().slice(0,4)]||"UNKNOWN";
+  const m = {
+    MRKU:"MAERSK",MSKU:"MAERSK",MSDU:"MAERSK",
+    MRSU:"MAERSK",SUDU:"MAERSK",SEAU:"MAERSK",
+    HASU:"MAERSK",TRHU:"MAERSK",TXGU:"HAPAG",
+    HLXU:"HAPAG",HLCU:"HAPAG",SEKU:"CMA CGM",
+    CMAU:"CMA CGM",CGMU:"CMA CGM",MSCU:"MSC",
+    MEDU:"MSC"
+  };
+
+  return m[n.trim().toUpperCase().slice(0,4)] || "UNKNOWN";
 }
 
-function showLoading(t,s){const el=document.getElementById("loadingScreen");document.getElementById("loadingTitle").textContent=t;document.getElementById("loadingSub").textContent=s||"";el.classList.remove("hidden");}
-function hideLoading(){document.getElementById("loadingScreen").classList.add("hidden");}
-function setView(v){currentView=v;document.getElementById("viewBySupplier").classList.toggle("active",v==="supplier");document.getElementById("viewByTimeline").classList.toggle("active",v==="timeline");renderTable();}
+// --------------------------------------------------
+// LOADING AND VIEW CONTROLS
+// --------------------------------------------------
+
+function showLoading(title, subtitle) {
+  const el = document.getElementById("loadingScreen");
+  document.getElementById("loadingTitle").textContent = title;
+  document.getElementById("loadingSub").textContent = subtitle || "";
+  el.classList.remove("hidden");
+}
+
+function hideLoading() {
+  document.getElementById("loadingScreen").classList.add("hidden");
+}
+
+function setView(v) {
+  currentView = v;
+
+  document.getElementById("viewBySupplier")
+    .classList.toggle("active", v === "supplier");
+
+  document.getElementById("viewByTimeline")
+    .classList.toggle("active", v === "timeline");
+
+  renderTable();
+}
+
+// --------------------------------------------------
+// DASHBOARD
+// --------------------------------------------------
 
 async function initDashboard() {
   showLoading("Loading your containers...", "Fetching from the database");
-  allSuppliers  = await fetchSuppliers();
+
+  allSuppliers = await fetchSuppliers();
   allContainers = await fetchContainers();
+
   populateSupplierFilter();
   updateStats();
   renderTable();
+
   hideLoading();
 }
 
 function populateSupplierFilter() {
-  const sel=document.getElementById("filterSupplier");
-  allSuppliers.forEach(s=>{ const o=document.createElement("option"); o.value=s.id; o.textContent=s.name; sel.appendChild(o); });
+  const sel = document.getElementById("filterSupplier");
+  sel.innerHTML = '<option value="">All suppliers</option>';
+
+  allSuppliers.forEach(s => {
+    const o = document.createElement("option");
+    o.value = s.id;
+    o.textContent = s.name;
+    sel.appendChild(o);
+  });
 }
 
-function updateStats() {
-  const total=allContainers.length, arrived=allContainers.filter(c=>c.status==="ARRIVED").length;
-  document.getElementById("statActive").textContent=total;
-  document.getElementById("statActiveSub").textContent=`across ${allSuppliers.length} suppliers`;
-  document.getElementById("statArrived").textContent=arrived;
-  document.getElementById("statNotArrived").textContent=total-arrived;
-  fetchArchived().then(a=>document.getElementById("statArchived").textContent=a.length);
+async function updateStats() {
+  const total = allContainers.length;
+  const arrived = allContainers.filter(c => c.status === "ARRIVED").length;
+
+  document.getElementById("statActive").textContent = total;
+  document.getElementById("statActiveSub").textContent =
+    `across ${allSuppliers.length} suppliers`;
+
+  document.getElementById("statArrived").textContent = arrived;
+  document.getElementById("statNotArrived").textContent = total - arrived;
+
+  try {
+    const archived = await fetchArchived();
+    document.getElementById("statArchived").textContent = archived.length;
+  } catch (error) {
+    console.error("Could not load archive count:", error);
+  }
 }
 
 function getFiltered() {
-  const q=(document.getElementById("searchInput")?.value||"").toLowerCase();
-  const sup=document.getElementById("filterSupplier")?.value||"";
-  const sta=document.getElementById("filterStatus")?.value||"";
-  return allContainers.filter(c=>{
-    if(q&&!`${c.container_number} ${c.vessel||""} ${c.suppliers?.name||""}`.toLowerCase().includes(q))return false;
-    if(sup&&c.supplier_id!==sup)return false;
-    if(sta&&c.status!==sta)return false;
+  const q = (document.getElementById("searchInput")?.value || "").toLowerCase();
+  const sup = document.getElementById("filterSupplier")?.value || "";
+  const sta = document.getElementById("filterStatus")?.value || "";
+
+  return allContainers.filter(c => {
+    if (q && !`${c.container_number} ${c.vessel || ""} ${c.suppliers?.name || ""}`.toLowerCase().includes(q)) {
+      return false;
+    }
+
+    if (sup && c.supplier_id !== sup) return false;
+    if (sta && c.status !== sta) return false;
+
     return true;
   });
 }
 
 function renderTable() {
-  const el=document.getElementById("contentArea"); if(!el)return;
-  const f=getFiltered();
-  if(!f.length){el.innerHTML=emptyHTML();return;}
-  el.innerHTML=currentView==="timeline"?timelineHTML(f):supplierHTML(f);
+  const el = document.getElementById("contentArea");
+  if (!el) return;
+
+  const filtered = getFiltered();
+
+  if (!filtered.length) {
+    el.innerHTML = emptyHTML();
+    Auth.applyRoleVisibility();
+    return;
+  }
+
+  el.innerHTML = currentView === "timeline"
+    ? timelineHTML(filtered)
+    : supplierHTML(filtered);
+
+  Auth.applyRoleVisibility();
 }
+
+// --------------------------------------------------
+// ORIGINAL EMPTY-STATE ILLUSTRATION — PRESERVED
+// --------------------------------------------------
 
 function emptyHTML(){return`<div class="empty-state"><div class="empty-illustration"><svg width="180" height="110" viewBox="0 0 180 110" fill="none"><rect x="10" y="72" width="160" height="32" rx="4" fill="#1F3864" stroke="#2A5A9F" stroke-width="1.2"/><rect x="14" y="75" width="46" height="26" rx="2" fill="#E53E3E"/><rect x="64" y="75" width="46" height="26" rx="2" fill="#D69E2E"/><rect x="114" y="75" width="52" height="26" rx="2" fill="#276749"/><rect x="22" y="38" width="136" height="36" rx="4" fill="#162D50" stroke="#2A5A9F" stroke-width="1.2"/><rect x="26" y="41" width="40" height="30" rx="2" fill="#3182CE"/><rect x="70" y="41" width="40" height="30" rx="2" fill="#E53E3E"/><rect x="114" y="41" width="40" height="30" rx="2" fill="#D69E2E"/><rect x="40" y="10" width="100" height="30" rx="4" fill="#1A3A6B" stroke="#2A5A9F" stroke-width="1.2"/><rect x="44" y="13" width="28" height="24" rx="2" fill="#276749"/><rect x="76" y="13" width="28" height="24" rx="2" fill="#E53E3E"/><rect x="108" y="13" width="28" height="24" rx="2" fill="#3182CE"/></svg></div><div class="empty-shadow"></div><div class="empty-title">No containers found</div><div class="empty-sub">Paste your container numbers and we'll fetch everything automatically</div><button class="btn btn-primary editor-only" onclick="openAddModal()" style="margin-top:6px">+ Add your first container</button></div>`;}
 
+// --------------------------------------------------
+// SUPPLIER VIEW
+// --------------------------------------------------
+
 function supplierHTML(containers) {
-  const grouped={};
-  containers.forEach(c=>{const n=c.suppliers?.name||"Unassigned";if(!grouped[n])grouped[n]=[];grouped[n].push(c);});
-  let html='<div class="table-wrap">';
-  Object.entries(grouped).forEach(([name,rows],i)=>{
-    html+=`<div class="section-header" ${i>0?'style="border-top:0.5px solid var(--grey-border)"':''}>
-      <span class="section-name">${name.toUpperCase()}</span><span class="section-count">${rows.length} container${rows.length!==1?'s':''}</span></div>
-      <div class="t-head" style="grid-template-columns:1.4fr 1.5fr 1.9fr 0.9fr 0.85fr 0.9fr">
-        <div class="th">Container no.</div><div class="th">Vessel</div><div class="th">ETA</div><div class="th">Line</div><div class="th">Status</div><div class="th">Packing list</div>
-      </div>`;
-    rows.forEach(c=>{html+=rowHTML(c)+detailHTML(c);});
+  const grouped = {};
+
+  containers.forEach(c => {
+    const name = c.suppliers?.name || "Unassigned";
+    if (!grouped[name]) grouped[name] = [];
+    grouped[name].push(c);
   });
-  html+="</div>";return html;
+
+  let html = '<div class="table-wrap">';
+
+  Object.entries(grouped).forEach(([name, rows], i) => {
+    html += `<div class="section-header" ${i > 0 ? 'style="border-top:0.5px solid var(--grey-border)"' : ''}>
+      <span class="section-name">${name.toUpperCase()}</span>
+      <span class="section-count">${rows.length} container${rows.length !== 1 ? "s" : ""}</span>
+    </div>
+    <div class="t-head" style="grid-template-columns:1.4fr 1.5fr 1.9fr 0.9fr 0.85fr 0.9fr">
+      <div class="th">Container no.</div>
+      <div class="th">Vessel</div>
+      <div class="th">ETA</div>
+      <div class="th">Line</div>
+      <div class="th">Status</div>
+      <div class="th">Packing list</div>
+    </div>`;
+
+    rows.forEach(c => {
+      html += rowHTML(c) + detailHTML(c);
+    });
+  });
+
+  html += "</div>";
+  return html;
 }
+
+// --------------------------------------------------
+// TIMELINE VIEW
+// --------------------------------------------------
 
 function timelineHTML(containers) {
-  const today=new Date();today.setHours(0,0,0,0);
-  const in7=new Date(today);in7.setDate(today.getDate()+7);
-  const endM=new Date(today.getFullYear(),today.getMonth()+1,0);
-  const buckets={overdue:{label:"Overdue / Arrived",items:[],color:"#DC2626"},thisWeek:{label:"This week",items:[],color:"#D69E2E"},thisMonth:{label:"This month",items:[],color:"#93C5FD"},later:{label:"Next month and beyond",items:[],color:"#9CA3AF"}};
-  containers.forEach(c=>{
-    if(!c.eta){buckets.later.items.push({...c,daysAway:999});return;}
-    const eta=new Date(c.eta);eta.setHours(0,0,0,0);
-    const days=Math.round((eta-today)/86400000);
-    const key=eta<=today?"overdue":eta<=in7?"thisWeek":eta<=endM?"thisMonth":"later";
+  const today = new Date();
+  today.setHours(0,0,0,0);
+
+  const in7 = new Date(today);
+  in7.setDate(today.getDate() + 7);
+
+  const endM = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+
+  const buckets = {
+    overdue:{label:"ETA passed / Arrival recorded",items:[],color:"#DC2626"},
+    thisWeek:{label:"This week",items:[],color:"#D69E2E"},
+    thisMonth:{label:"This month",items:[],color:"#93C5FD"},
+    later:{label:"Next month and beyond",items:[],color:"#9CA3AF"}
+  };
+
+  containers.forEach(c => {
+    if (!c.eta) {
+      buckets.later.items.push({...c,daysAway:999});
+      return;
+    }
+
+    const eta = new Date(c.eta);
+    eta.setHours(0,0,0,0);
+
+    const days = Math.round((eta - today) / 86400000);
+
+    const key = eta <= today
+      ? "overdue"
+      : eta <= in7
+        ? "thisWeek"
+        : eta <= endM
+          ? "thisMonth"
+          : "later";
+
     buckets[key].items.push({...c,daysAway:days});
   });
-  let html="";
-  Object.entries(buckets).forEach(([key,b])=>{
-    if(!b.items.length)return;
-    const chip=key==="overdue"?"overdue":key==="thisWeek"?"soon":key==="thisMonth"?"later":"far";
-    html+=`<div class="bucket"><div class="bucket-header"><span class="bucket-dot" style="background:${b.color}"></span><span class="bucket-title">${b.label}</span><span class="bucket-count">${b.items.length} container${b.items.length!==1?'s':''}</span></div>
-      <div class="table-wrap"><div class="t-head" style="grid-template-columns:1.3fr 1.3fr 1.6fr 0.8fr 0.8fr 1fr">
-        <div class="th">Container no.</div><div class="th">Vessel</div><div class="th">ETA</div><div class="th">Supplier</div><div class="th">Line</div><div class="th">Countdown</div></div>`;
-    b.items.forEach(c=>{
-      const label=c.daysAway===0?"Arrives today":c.daysAway===1?"Arrives tomorrow":c.daysAway>1?`Arrives in ${c.daysAway} days`:c.daysAway===-1?"Arrived yesterday":`Arrived ${Math.abs(c.daysAway)} days ago`;
-      html+=`<div class="t-row" style="grid-template-columns:1.3fr 1.3fr 1.6fr 0.8fr 0.8fr 1fr" onclick="toggleDetail('${c.id}')">
-        <div class="mono">${c.container_number}</div><div class="muted">${c.vessel||"—"}</div><div class="muted">${fmtDate(c.eta)}</div>
-        <div class="muted">${c.suppliers?.name||"—"}</div><div class="muted">${c.shipping_line||"—"}</div>
-        <div><span class="countdown-chip ${chip}">${label}</span></div></div>`+detailHTML(c);
+
+  let html = "";
+
+  Object.entries(buckets).forEach(([key,b]) => {
+    if (!b.items.length) return;
+
+    const chip = key === "overdue" ? "overdue"
+      : key === "thisWeek" ? "soon"
+      : key === "thisMonth" ? "later" : "far";
+
+    html += `<div class="bucket">
+      <div class="bucket-header">
+        <span class="bucket-dot" style="background:${b.color}"></span>
+        <span class="bucket-title">${b.label}</span>
+        <span class="bucket-count">${b.items.length} container${b.items.length !== 1 ? "s" : ""}</span>
+      </div>
+      <div class="table-wrap">
+        <div class="t-head" style="grid-template-columns:1.3fr 1.3fr 1.6fr 0.8fr 0.8fr 1fr">
+          <div class="th">Container no.</div>
+          <div class="th">Vessel</div>
+          <div class="th">ETA</div>
+          <div class="th">Supplier</div>
+          <div class="th">Line</div>
+          <div class="th">Countdown</div>
+        </div>`;
+
+    b.items.forEach(c => {
+      const label = c.daysAway === 999 ? "ETA not set"
+        : c.daysAway === 0 ? "ETA today"
+        : c.daysAway === 1 ? "ETA tomorrow"
+        : c.daysAway > 1 ? `ETA in ${c.daysAway} days`
+        : c.daysAway === -1 ? "ETA was yesterday"
+        : `ETA was ${Math.abs(c.daysAway)} days ago`;
+
+      html += `<div class="t-row" style="grid-template-columns:1.3fr 1.3fr 1.6fr 0.8fr 0.8fr 1fr" onclick="toggleDetail('${c.id}')">
+        <div class="mono">${c.container_number}</div>
+        <div class="muted">${c.vessel || "—"}</div>
+        <div class="muted">${fmtDate(c.eta)}</div>
+        <div class="muted">${c.suppliers?.name || "—"}</div>
+        <div class="muted">${c.shipping_line || "—"}</div>
+        <div><span class="countdown-chip ${chip}">${label}</span></div>
+      </div>` + detailHTML(c);
     });
-    html+="</div></div>";
+
+    html += "</div></div>";
   });
-  return html||emptyHTML();
+
+  return html || emptyHTML();
 }
 
-function rowHTML(c){
-  const sc=c.status==="ARRIVED"?"arrived":"pending";
-  const ic=c.status==="ARRIVED"?"#059669":"#DC2626";
-  const pl=c.packing_list_url?`<span class="pl-btn" onclick="event.stopPropagation();viewPL('${c.id}')">📄 View / Download</span>`:`<span class="pl-missing">No file yet</span>`;
-  return`<div class="t-row" style="grid-template-columns:1.4fr 1.5fr 1.9fr 0.9fr 0.85fr 0.9fr" onclick="toggleDetail('${c.id}')">
-    <div class="mono">${c.container_number}</div><div class="muted">${c.vessel||"—"}</div><div class="muted">${fmtDate(c.eta)}</div>
-    <div class="muted">${c.shipping_line||"—"}</div>
-    <div><span class="badge ${sc}"><span class="ind" style="background:${ic}"></span>${c.status==="ARRIVED"?"Arrived":"Not arrived"}</span></div>
-    <div>${pl}</div></div>`;
-}
+// --------------------------------------------------
+// CONTAINER ROWS AND DETAILS
+// --------------------------------------------------
 
-function detailHTML(c){
-  if(c.id!==activeDetailId)return"";
-  const pl=c.packing_list_url
-    ?`<div class="pl-file-row"><div style="width:28px;height:28px;background:#DBEAFE;border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1D4ED8" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div><div style="flex:1"><div class="pl-file-name">${c.packing_list_filename||"Packing list"}</div></div><div style="display:flex;gap:6px"><button class="pl-action-btn" onclick="viewPL('${c.id}')">View</button><button class="pl-action-btn" onclick="viewPL('${c.id}',true)">↓</button><button class="pl-action-btn editor-only" onclick="document.getElementById('pu_${c.id}').click()">Replace</button></div></div><input type="file" id="pu_${c.id}" onchange="uploadPL(event,'${c.id}')">`
-    :`<div class="pl-upload-area editor-only" onclick="document.getElementById('pu_${c.id}').click()">Click to upload packing list (PDF, Word, or Excel)</div><input type="file" id="pu_${c.id}" onchange="uploadPL(event,'${c.id}')"><p style="font-size:10px;color:#D1D5DB;font-style:italic;margin-top:8px">No packing list uploaded yet</p>`;
-  return`<div class="detail-panel open">
-    <div><div class="detail-section-title">Shipment info</div><div class="detail-card">
-      <div class="detail-row"><span class="detail-key">Container</span><span class="detail-val mono">${c.container_number}</span></div>
-      <div class="detail-row"><span class="detail-key">Vessel</span><span class="detail-val">${c.vessel||"—"}</span></div>
-      <div class="detail-row"><span class="detail-key">ETA</span><span class="detail-val">${fmtDate(c.eta)}</span></div>
-      <div class="detail-row"><span class="detail-key">Shipping line</span><span class="detail-val">${c.shipping_line||"—"}</span></div>
-      <div class="detail-row"><span class="detail-key">Supplier</span><span class="detail-val">${c.suppliers?.name||"—"}</span></div>
-      <div class="detail-row"><span class="detail-key">Recipient</span><span class="detail-val">${c.recipient||"WAGYINGO"}</span></div>
-      <div class="detail-row"><span class="detail-key">Status</span><span class="detail-val" style="color:${c.status==='ARRIVED'?'#065F46':'#991B1B'}">${c.status==='ARRIVED'?'Arrived':'Not arrived'}</span></div>
-    </div>
-    <div class="editor-only" style="display:flex;gap:8px;margin-top:10px">
-      <button class="btn" onclick="openEditModal('${c.id}')">Edit</button>
-      <button class="btn" style="color:#1D4ED8;border-color:#BFDBFE" onclick="doMarkEmptied('${c.id}')">Mark emptied</button>
-      <button class="btn" style="color:#991B1B;border-color:#F7C1C1" onclick="doDelete('${c.id}')">Remove</button>
-    </div></div>
-    <div><div class="detail-section-title">Packing list</div><div class="detail-card">${pl}</div></div>
+function rowHTML(c) {
+  const arrived = c.status === "ARRIVED";
+  const sc = arrived ? "arrived" : "pending";
+  const ic = arrived ? "#059669" : "#DC2626";
+
+  const pl = c.packing_list_url
+    ? `<span class="pl-btn" onclick="event.stopPropagation();viewPL('${c.id}')">📄 View / Download</span>`
+    : `<span class="pl-missing">No file yet</span>`;
+
+  return `<div class="t-row" style="grid-template-columns:1.4fr 1.5fr 1.9fr 0.9fr 0.85fr 0.9fr" onclick="toggleDetail('${c.id}')">
+    <div class="mono">${c.container_number}</div>
+    <div class="muted">${c.vessel || "—"}</div>
+    <div class="muted">${fmtDate(c.eta)}</div>
+    <div class="muted">${c.shipping_line || "—"}</div>
+    <div><span class="badge ${sc}"><span class="ind" style="background:${ic}"></span>${arrived ? "Arrived" : "Not arrived"}</span></div>
+    <div>${pl}</div>
   </div>`;
 }
 
-function toggleDetail(id){activeDetailId=activeDetailId===id?null:id;renderTable();}
-async function viewPL(id,dl){
-  const c=allContainers.find(x=>x.id===id);if(!c?.packing_list_url)return;
-  const w=dl?null:window.open("","_blank");
-  const {data,error}=await db.storage.from("packing-lists").createSignedUrl(c.packing_list_url,300,dl?{download:c.packing_list_filename||true}:undefined);
-  if(error){if(w)w.close();alert("Could not open file: "+error.message);return;}
-  if(dl)location.href=data.signedUrl;else w.location.href=data.signedUrl;
-}
+function detailHTML(c) {
+  if (c.id !== activeDetailId) return "";
 
-async function openAddModal(){
-  if(!allSuppliers.length) allSuppliers = await fetchSuppliers();
-  const opts=allSuppliers.map(s=>`<option value="${s.id}">${s.name}</option>`).join("");
-  document.getElementById("modalRoot").innerHTML=`
-    <div class="modal-overlay" onclick="closeOverlay(event)"><div class="modal" onclick="event.stopPropagation()">
-      <div class="modal-title">Add containers</div>
-      <div class="modal-sub">Paste container numbers — one per line. We'll detect the shipping line automatically.</div>
-      <div class="form-row"><label class="form-label">Container numbers</label>
-        <textarea class="form-textarea" id="pasteInput" placeholder="MRKU3877867&#10;MRKU5521221&#10;TRHU5206816"></textarea></div>
-      <div class="form-grid">
-        <div class="form-row"><label class="form-label">Supplier</label><select class="form-select" id="supplierSel">${opts}</select></div>
-        <div class="form-row"><label class="form-label">Default recipient</label>
-          <select class="form-select" id="recipientSel"><option value="WAGYINGO">WAGYINGO</option><option value="Lucy">Lucy</option></select></div>
+  const pl = c.packing_list_url
+    ? `<div class="pl-file-row">
+        <div style="width:28px;height:28px;background:#DBEAFE;border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1D4ED8" stroke-width="2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+          </svg>
+        </div>
+        <div style="flex:1">
+          <div class="pl-file-name">${c.packing_list_filename || "Packing list"}</div>
+        </div>
+        <div style="display:flex;gap:6px">
+          <button class="pl-action-btn" onclick="viewPL('${c.id}')">View</button>
+          <button class="pl-action-btn" onclick="viewPL('${c.id}',true)">↓</button>
+          <button class="pl-action-btn editor-only" onclick="document.getElementById('pu_${c.id}').click()">Replace</button>
+        </div>
       </div>
-      <div class="modal-footer"><button class="btn" onclick="closeModal()">Cancel</button>
-        <button class="btn btn-primary" onclick="runLookup()">Look up containers →</button></div>
-    </div></div>`;
+      <input type="file" id="pu_${c.id}" onchange="uploadPL(event,'${c.id}')">`
+    : `<div class="pl-upload-area editor-only" onclick="document.getElementById('pu_${c.id}').click()">Click to upload packing list (PDF, Word, or Excel)</div>
+      <input type="file" id="pu_${c.id}" onchange="uploadPL(event,'${c.id}')">
+      <p style="font-size:10px;color:#D1D5DB;font-style:italic;margin-top:8px">No packing list uploaded yet</p>`;
+
+  return `<div class="detail-panel open">
+    <div>
+      <div class="detail-section-title">Shipment info</div>
+      <div class="detail-card">
+        <div class="detail-row"><span class="detail-key">Container</span><span class="detail-val mono">${c.container_number}</span></div>
+        <div class="detail-row"><span class="detail-key">Vessel</span><span class="detail-val">${c.vessel || "—"}</span></div>
+        <div class="detail-row"><span class="detail-key">ETA</span><span class="detail-val">${fmtDate(c.eta)}</span></div>
+        <div class="detail-row"><span class="detail-key">Shipping line</span><span class="detail-val">${c.shipping_line || "—"}</span></div>
+        <div class="detail-row"><span class="detail-key">Supplier</span><span class="detail-val">${c.suppliers?.name || "—"}</span></div>
+        <div class="detail-row"><span class="detail-key">Recipient</span><span class="detail-val">${c.recipient || "WAGYINGO"}</span></div>
+        <div class="detail-row"><span class="detail-key">Status</span><span class="detail-val" style="color:${c.status === "ARRIVED" ? "#065F46" : "#991B1B"}">${c.status === "ARRIVED" ? "Arrived" : "Not arrived"}</span></div>
+      </div>
+
+      <div class="editor-only" style="display:flex;gap:8px;margin-top:10px">
+        <button class="btn" onclick="openEditModal('${c.id}')">Edit</button>
+        <button class="btn" style="color:#1D4ED8;border-color:#BFDBFE" onclick="doMarkEmptied('${c.id}')">Mark emptied</button>
+        <button class="btn admin-only" style="color:#991B1B;border-color:#F7C1C1" onclick="doDelete('${c.id}')">Remove</button>
+      </div>
+    </div>
+
+    <div>
+      <div class="detail-section-title">Packing list</div>
+      <div class="detail-card">${pl}</div>
+    </div>
+  </div>`;
 }
 
-let pendingRows=[];
-async function runLookup(){
-  const raw=document.getElementById("pasteInput").value;
-  const numbers=raw.split(/[\n,]+/).map(s=>s.trim().toUpperCase()).filter(s=>s.length>0);
-  if(!numbers.length){alert("Please paste at least one container number.");return;}
-  const suppId=document.getElementById("supplierSel").value;
-  const recipient=document.getElementById("recipientSel").value;
-  pendingRows=numbers.map(n=>({container_number:n,vessel:"",eta:"",shipping_line:detectLine(n),supplier_id:suppId,recipient}));
+function toggleDetail(id) {
+  activeDetailId = activeDetailId === id ? null : id;
+  renderTable();
+}
+
+// --------------------------------------------------
+// PACKING LIST
+// --------------------------------------------------
+
+async function viewPL(id, download) {
+  const c = allContainers.find(x => x.id === id);
+  if (!c?.packing_list_url) return;
+
+  const w = download ? null : window.open("", "_blank");
+
+  const options = download
+    ? {download:c.packing_list_filename || true}
+    : undefined;
+
+  const {data,error} = await db.storage
+    .from("packing-lists")
+    .createSignedUrl(c.packing_list_url, 300, options);
+
+  if (error) {
+    if (w) w.close();
+    alert("Could not open file: " + error.message);
+    return;
+  }
+
+  if (download) {
+    location.href = data.signedUrl;
+  } else if (w) {
+    w.location.href = data.signedUrl;
+  }
+}
+
+async function uploadPL(event, id) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  showLoading("Uploading packing list...", file.name);
+
+  const path = `${id}/${Date.now()}_${file.name.replace(/[^\w.\-]+/g,"_")}`;
+
+  const {error} = await db.storage
+    .from("packing-lists")
+    .upload(path, file);
+
+  if (error) {
+    hideLoading();
+    alert("Upload failed: " + error.message);
+    return;
+  }
+
+  const result = await updateContainerDB(id, {
+    packing_list_url:path,
+    packing_list_filename:file.name
+  });
+
+  hideLoading();
+
+  if (!result.success) {
+    alert("Error: " + result.message);
+    return;
+  }
+
+  allContainers = await fetchContainers();
+  renderTable();
+}
+
+// --------------------------------------------------
+// ADD CONTAINERS
+// --------------------------------------------------
+
+async function openAddModal() {
+  if (!Auth.isEditor()) return;
+
+  if (!allSuppliers.length) {
+    allSuppliers = await fetchSuppliers();
+  }
+
+  const opts = allSuppliers.map(s =>
+    `<option value="${s.id}">${s.name}</option>`
+  ).join("");
+
+  document.getElementById("modalRoot").innerHTML = `
+    <div class="modal-overlay" onclick="closeOverlay(event)">
+      <div class="modal" onclick="event.stopPropagation()">
+        <div class="modal-title">Add containers</div>
+        <div class="modal-sub">Paste container numbers — one per line. We'll detect the shipping line automatically.</div>
+
+        <div class="form-row">
+          <label class="form-label">Container numbers</label>
+          <textarea class="form-textarea" id="pasteInput" placeholder="MRKU3877867&#10;MRKU5521221&#10;TRHU5206816"></textarea>
+        </div>
+
+        <div class="form-grid">
+          <div class="form-row">
+            <label class="form-label">Supplier</label>
+            <select class="form-select" id="supplierSel">${opts}</select>
+          </div>
+          <div class="form-row">
+            <label class="form-label">Default recipient</label>
+            <select class="form-select" id="recipientSel">
+              <option value="WAGYINGO">WAGYINGO</option>
+              <option value="Lucy">Lucy</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn" onclick="closeModal()">Cancel</button>
+          <button class="btn btn-primary" onclick="runLookup()">Look up containers →</button>
+        </div>
+      </div>
+    </div>`;
+}
+
+async function runLookup() {
+  if (!Auth.isEditor()) return;
+
+  const raw = document.getElementById("pasteInput").value;
+  const numbers = raw.split(/[\n,]+/)
+    .map(s => s.trim().toUpperCase())
+    .filter(s => s.length > 0);
+
+  if (!numbers.length) {
+    alert("Please paste at least one container number.");
+    return;
+  }
+
+  const supplierId = document.getElementById("supplierSel").value;
+  const recipient = document.getElementById("recipientSel").value;
+
+  pendingRows = numbers.map(n => ({
+    container_number:n,
+    vessel:"",
+    eta:"",
+    shipping_line:detectLine(n),
+    supplier_id:supplierId,
+    recipient
+  }));
+
   renderReviewModal();
 }
 
-function renderReviewModal(){
-  const rowsHTML=pendingRows.map((r,i)=>`
+function renderReviewModal() {
+  const rowsHTML = pendingRows.map((r,i) => `
     <div style="display:grid;grid-template-columns:1.3fr 1.4fr 1.3fr 0.9fr;gap:6px;padding:9px 12px;border-bottom:0.5px solid var(--grey-border);align-items:center">
       <div class="mono" style="font-size:11px">${r.container_number}</div>
       <input class="form-input" style="height:30px;font-size:11px" value="${r.vessel}" onchange="pendingRows[${i}].vessel=this.value" placeholder="Vessel name">
       <input type="date" class="form-input" style="height:30px;font-size:11px" value="${r.eta}" onchange="pendingRows[${i}].eta=this.value">
       <select class="form-input" style="height:30px;font-size:11px" onchange="pendingRows[${i}].shipping_line=this.value">
-        ${["MAERSK","HAPAG","CMA CGM","MSC","UNKNOWN"].map(l=>`<option ${r.shipping_line===l?"selected":""}>${l}</option>`).join("")}
-      </select></div>`).join("");
-  document.getElementById("modalRoot").innerHTML=`
-    <div class="modal-overlay" onclick="closeOverlay(event)"><div class="modal" style="max-width:680px" onclick="event.stopPropagation()">
-      <div class="modal-title">Review & confirm</div>
-      <div class="modal-sub">${pendingRows.length} container${pendingRows.length!==1?"s":""} ready. Fill in vessel and ETA for each, then save.</div>
-      <div style="background:var(--bg-subtle);border:0.5px solid var(--grey-border);border-radius:10px;overflow:hidden;margin-bottom:8px">
-        <div style="display:grid;grid-template-columns:1.3fr 1.4fr 1.3fr 0.9fr;gap:6px;padding:8px 12px;border-bottom:0.5px solid var(--grey-border);background:#fff">
-          <div class="th">Container</div><div class="th">Vessel</div><div class="th">ETA *</div><div class="th">Line</div></div>
-        ${rowsHTML}</div>
-      <div class="modal-footer"><button class="btn" onclick="openAddModal()">Back</button>
-        <button class="btn btn-primary" onclick="confirmSave()">Save all ${pendingRows.length} →</button></div>
-    </div></div>`;
+        ${["MAERSK","HAPAG","CMA CGM","MSC","UNKNOWN"].map(l =>
+          `<option ${r.shipping_line === l ? "selected" : ""}>${l}</option>`
+        ).join("")}
+      </select>
+    </div>`).join("");
+
+  document.getElementById("modalRoot").innerHTML = `
+    <div class="modal-overlay" onclick="closeOverlay(event)">
+      <div class="modal" style="max-width:680px" onclick="event.stopPropagation()">
+        <div class="modal-title">Review & confirm</div>
+        <div class="modal-sub">${pendingRows.length} containers ready. Fill in vessel and ETA for each, then save.</div>
+
+        <div style="background:var(--bg-subtle);border:0.5px solid var(--grey-border);border-radius:10px;overflow:hidden;margin-bottom:8px">
+          <div style="display:grid;grid-template-columns:1.3fr 1.4fr 1.3fr 0.9fr;gap:6px;padding:8px 12px;border-bottom:0.5px solid var(--grey-border);background:#fff">
+            <div class="th">Container</div>
+            <div class="th">Vessel</div>
+            <div class="th">ETA *</div>
+            <div class="th">Line</div>
+          </div>
+          ${rowsHTML}
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn" onclick="openAddModal()">Back</button>
+          <button class="btn btn-primary" onclick="confirmSave()">Save all ${pendingRows.length} →</button>
+        </div>
+      </div>
+    </div>`;
 }
 
-async function confirmSave(){
-  const missing=pendingRows.filter(r=>!r.eta);
-  if(missing.length){alert(`Please enter ETA for: ${missing.map(r=>r.container_number).join(", ")}`);return;}
-  showLoading("Saving containers...","Adding to your tracker");
-  const result=await addContainersDB(pendingRows);
+async function confirmSave() {
+  if (!Auth.isEditor()) return;
+
+  const missing = pendingRows.filter(r => !r.eta);
+
+  if (missing.length) {
+    alert(`Please enter ETA for: ${missing.map(r => r.container_number).join(", ")}`);
+    return;
+  }
+
+  showLoading("Saving containers...", "Adding to your tracker");
+
+  const result = await addContainersDB(pendingRows);
+
   hideLoading();
-  if(!result.success){alert("Error: "+result.message);return;}
+
+  if (!result.success) {
+    alert("Error: " + result.message);
+    return;
+  }
+
   closeModal();
-  allContainers=await fetchContainers();
-  renderTable();updateStats();
+  allContainers = await fetchContainers();
+  renderTable();
+  updateStats();
 }
 
-async function openEditModal(id){
-  if(!allSuppliers.length) allSuppliers = await fetchSuppliers();
-  const c=allContainers.find(x=>x.id===id);if(!c)return;
-  const opts=allSuppliers.map(s=>`<option value="${s.id}" ${s.id===c.supplier_id?"selected":""}>${s.name}</option>`).join("");
-  document.getElementById("modalRoot").innerHTML=`
-    <div class="modal-overlay" onclick="closeOverlay(event)"><div class="modal" onclick="event.stopPropagation()">
-      <div class="modal-title">Edit container</div>
-      <div class="form-row"><label class="form-label">Container number</label><input class="form-input" id="eNum" value="${c.container_number}" style="font-family:monospace"></div>
-      <div class="form-grid">
-        <div class="form-row"><label class="form-label">Supplier</label><select class="form-select" id="eSup">${opts}</select></div>
-        <div class="form-row"><label class="form-label">Shipping line</label>
-          <select class="form-select" id="eLine">${["MAERSK","HAPAG","CMA CGM","MSC"].map(l=>`<option ${c.shipping_line===l?"selected":""}>${l}</option>`).join("")}</select></div>
+// --------------------------------------------------
+// EDIT CONTAINER
+// --------------------------------------------------
+
+async function openEditModal(id) {
+  if (!Auth.isEditor()) return;
+
+  if (!allSuppliers.length) {
+    allSuppliers = await fetchSuppliers();
+  }
+
+  const c = allContainers.find(x => x.id === id);
+  if (!c) return;
+
+  const opts = allSuppliers.map(s =>
+    `<option value="${s.id}" ${s.id === c.supplier_id ? "selected" : ""}>${s.name}</option>`
+  ).join("");
+
+  document.getElementById("modalRoot").innerHTML = `
+    <div class="modal-overlay" onclick="closeOverlay(event)">
+      <div class="modal" onclick="event.stopPropagation()">
+        <div class="modal-title">Edit container</div>
+
+        <div class="form-row">
+          <label class="form-label">Container number</label>
+          <input class="form-input" id="eNum" value="${c.container_number}" style="font-family:monospace">
+        </div>
+
+        <div class="form-grid">
+          <div class="form-row">
+            <label class="form-label">Supplier</label>
+            <select class="form-select" id="eSup">${opts}</select>
+          </div>
+          <div class="form-row">
+            <label class="form-label">Shipping line</label>
+            <select class="form-select" id="eLine">
+              ${["MAERSK","HAPAG","CMA CGM","MSC","UNKNOWN"].map(l =>
+                `<option ${c.shipping_line === l ? "selected" : ""}>${l}</option>`
+              ).join("")}
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <label class="form-label">Vessel</label>
+          <input class="form-input" id="eVes" value="${c.vessel || ""}">
+        </div>
+
+        <div class="form-grid">
+          <div class="form-row">
+            <label class="form-label">ETA</label>
+            <input type="date" class="form-input" id="eEta" value="${c.eta || ""}">
+          </div>
+          <div class="form-row">
+            <label class="form-label">Recipient</label>
+            <select class="form-select" id="eRec">
+              <option ${c.recipient === "WAGYINGO" ? "selected" : ""}>WAGYINGO</option>
+              <option ${c.recipient === "Lucy" ? "selected" : ""}>Lucy</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn" onclick="closeModal()">Cancel</button>
+          <button class="btn btn-primary" onclick="saveEdit('${id}')">Save changes</button>
+        </div>
       </div>
-      <div class="form-row"><label class="form-label">Vessel</label><input class="form-input" id="eVes" value="${c.vessel||""}"></div>
-      <div class="form-grid">
-        <div class="form-row"><label class="form-label">ETA</label><input type="date" class="form-input" id="eEta" value="${c.eta||""}"></div>
-        <div class="form-row"><label class="form-label">Recipient</label>
-          <select class="form-select" id="eRec"><option ${c.recipient==="WAGYINGO"?"selected":""}>WAGYINGO</option><option ${c.recipient==="Lucy"?"selected":""}>Lucy</option></select></div>
-      </div>
-      <div class="modal-footer"><button class="btn" onclick="closeModal()">Cancel</button>
-        <button class="btn btn-primary" onclick="saveEdit('${id}')">Save changes</button></div>
-    </div></div>`;
+    </div>`;
 }
 
-async function saveEdit(id){
-  const updates={container_number:document.getElementById("eNum").value.trim().toUpperCase(),supplier_id:document.getElementById("eSup").value,shipping_line:document.getElementById("eLine").value,vessel:document.getElementById("eVes").value,eta:document.getElementById("eEta").value,recipient:document.getElementById("eRec").value};
-  showLoading("Saving...","");
-  const r=await updateContainerDB(id,updates);
+async function saveEdit(id) {
+  if (!Auth.isEditor()) return;
+
+  const updates = {
+    container_number:document.getElementById("eNum").value.trim().toUpperCase(),
+    supplier_id:document.getElementById("eSup").value,
+    shipping_line:document.getElementById("eLine").value,
+    vessel:document.getElementById("eVes").value,
+    eta:document.getElementById("eEta").value,
+    recipient:document.getElementById("eRec").value
+  };
+
+  showLoading("Saving...", "");
+
+  const result = await updateContainerDB(id, updates);
+
   hideLoading();
-  if(!r.success){alert("Error: "+r.message);return;}
-  closeModal();allContainers=await fetchContainers();renderTable();updateStats();
+
+  if (!result.success) {
+    alert("Error: " + result.message);
+    return;
+  }
+
+  closeModal();
+  allContainers = await fetchContainers();
+  renderTable();
+  updateStats();
 }
 
-async function doMarkEmptied(id){
-  const c=allContainers.find(x=>x.id===id);
-  if(!c||!confirm(`Mark ${c.container_number} as emptied? It will move to the archive.`))return;
-  showLoading("Moving to archive...","");
-  const r=await markEmptiedDB(c);
+// --------------------------------------------------
+// ARCHIVE AND DELETE
+// --------------------------------------------------
+
+async function doMarkEmptied(id) {
+  if (!Auth.isEditor()) return;
+
+  const c = allContainers.find(x => x.id === id);
+
+  if (!c || !confirm(`Mark ${c.container_number} as emptied? It will move to the archive.`)) {
+    return;
+  }
+
+  showLoading("Moving to archive...", "");
+
+  const result = await markEmptiedDB(c);
+
   hideLoading();
-  if(!r.success){alert("Error: "+r.message);return;}
-  activeDetailId=null;allContainers=await fetchContainers();renderTable();updateStats();
+
+  if (!result.success) {
+    alert("Error: " + result.message);
+    return;
+  }
+
+  activeDetailId = null;
+  allContainers = await fetchContainers();
+  renderTable();
+  updateStats();
 }
 
-async function doDelete(id){
-  const c=allContainers.find(x=>x.id===id);
-  if(!c||!confirm(`Remove ${c.container_number}? This cannot be undone.`))return;
-  showLoading("Removing...","");
-  const r=await deleteContainerDB(id);
+async function doDelete(id) {
+  if (!Auth.isAdmin()) {
+    alert("Only administrators can permanently remove containers.");
+    return;
+  }
+
+  const c = allContainers.find(x => x.id === id);
+
+  if (!c || !confirm(`Permanently remove ${c.container_number}? This cannot be undone.`)) {
+    return;
+  }
+
+  showLoading("Removing...", "");
+
+  const result = await deleteContainerDB(id);
+
   hideLoading();
-  if(!r.success){alert("Error: "+r.message);return;}
-  activeDetailId=null;allContainers=await fetchContainers();renderTable();updateStats();
+
+  if (!result.success) {
+    alert("Error: " + result.message);
+    return;
+  }
+
+  activeDetailId = null;
+  allContainers = await fetchContainers();
+  renderTable();
+  updateStats();
 }
 
-async function uploadPL(event,id){
-  const file=event.target.files[0];if(!file)return;
-  showLoading("Uploading packing list...",file.name);
-  const path=`${id}/${Date.now()}_${file.name.replace(/[^\w.\-]+/g,"_")}`;
-  const {error}=await db.storage.from("packing-lists").upload(path,file);
-  if(error){hideLoading();alert("Upload failed: "+error.message);return;}
-  const r=await updateContainerDB(id,{packing_list_url:path,packing_list_filename:file.name});
-  hideLoading();
-  if(!r.success){alert("Error: "+r.message);return;}
-  allContainers=await fetchContainers();renderTable();
+// --------------------------------------------------
+// MODAL HELPERS AND EXPORTS
+// --------------------------------------------------
+
+function closeModal() {
+  document.getElementById("modalRoot").innerHTML = "";
 }
 
-function closeModal(){document.getElementById("modalRoot").innerHTML="";}
-function closeOverlay(e){if(e.target.classList.contains("modal-overlay"))closeModal();}
-function doExportExcel(){alert("Excel export coming soon!");}
-function doExportPDF(){alert("PDF export coming soon!");}
+function closeOverlay(event) {
+  if (event.target.classList.contains("modal-overlay")) {
+    closeModal();
+  }
+}
+
+function doExportExcel() {
+  alert("Excel export coming soon!");
+}
+
+function doExportPDF() {
+  alert("PDF export coming soon!");
+}
 </script>
+
 </body>
 </html>
