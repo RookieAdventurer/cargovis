@@ -1,125 +1,145 @@
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Container Tracker — Suppliers</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/supabase-js/2.39.0/supabase.min.js"></script>
-<link rel="stylesheet" href="css/styles.css">
 
-<!-- Inline Supabase init — no external file needed -->
-<script>
-window.addEventListener("load", function() {
-  window.AppDB = {
-    supabaseClient: window.supabase.createClient(
-      "https://jwprxvobiunfnucrrzuo.supabase.co",
-      "sb_publishable_QaPnj3hornmsAdbHrVM92g_6HPfgUI6"
-    ),
-    detectShippingLine: function(n) {
-      const m = {
-        MRKU:"MAERSK",MSKU:"MAERSK",MSDU:"MAERSK",MRSU:"MAERSK",
-        SUDU:"MAERSK",SEAU:"MAERSK",HASU:"MAERSK",TRHU:"MAERSK",
-        TXGU:"HAPAG",HLXU:"HAPAG",HLCU:"HAPAG",
-        SEKU:"CMA CGM",CMAU:"CMA CGM",CGMU:"CMA CGM",
-        MSCU:"MSC",MEDU:"MSC"
-      };
-      return m[n.trim().toUpperCase().slice(0,4)] || "UNKNOWN";
-    }
-  };
-  console.log("AppDB ready:", window.AppDB.supabaseClient ? "YES" : "NO");
-  initPage();
-});
-</script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/supabase-client.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/containers.js"></script>
+
+<link rel="stylesheet" href="css/styles.css">
 </head>
+
 <body>
 
 <div class="navbar">
   <div class="nav-left">
     <div class="nav-icon">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2">
-        <rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8h4l3 3v5h-7V8z"/>
-        <circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+        stroke="#fff" stroke-width="2">
+        <rect x="1" y="3" width="15" height="13" rx="1"/>
+        <path d="M16 8h4l3 3v5h-7V8z"/>
+        <circle cx="5.5" cy="18.5" r="2.5"/>
+        <circle cx="18.5" cy="18.5" r="2.5"/>
       </svg>
     </div>
     <span class="nav-title">Container Tracker</span>
   </div>
+
   <div class="nav-links">
     <a href="index.html" class="nav-link">Active</a>
     <a href="archive.html" class="nav-link">Archive</a>
     <a href="suppliers.html" class="nav-link active editor-only">Suppliers</a>
   </div>
+
   <div class="nav-right">
     <span class="nav-date" id="todayDate"></span>
-    <div class="avatar" id="userAvatar" onclick="handleLogout()" title="Click to log out">··</div>
+    <div class="avatar" id="userAvatar"
+      onclick="handleLogout()" title="Click to log out">··</div>
   </div>
 </div>
 
 <div class="page-body" style="max-width:600px">
+
   <div class="editor-only">
     <div style="display:flex; gap:8px; margin-bottom:20px">
-      <input class="form-input" id="newSupplierName" placeholder="New supplier name">
-      <button class="btn btn-primary" onclick="handleAddSupplier()" style="white-space:nowrap">+ Add supplier</button>
+      <input class="form-input" id="newSupplierName"
+        placeholder="New supplier name">
+      <button class="btn btn-primary" id="addSupplierBtn"
+        onclick="handleAddSupplier()" style="white-space:nowrap">
+        + Add supplier
+      </button>
     </div>
   </div>
+
   <div class="table-wrap">
-    <div class="t-head" style="grid-template-columns: 1fr 0.6fr">
+    <div class="t-head" style="grid-template-columns:1fr 0.6fr">
       <div class="th">Supplier name</div>
       <div class="th">Active containers</div>
     </div>
-    <div id="suppliersList"><div style="padding:20px;color:#9CA3AF;font-size:13px">Loading...</div></div>
+
+    <div id="suppliersList">
+      <div style="padding:20px;color:#9CA3AF;font-size:13px">
+        Loading...
+      </div>
+    </div>
   </div>
-  <div id="viewerNotice" class="hidden" style="margin-top:16px;font-size:12px;color:var(--grey-text-light);text-align:center">
+
+  <div id="viewerNotice" class="hidden"
+    style="margin-top:16px;font-size:12px;
+    color:var(--grey-text-light);text-align:center">
     You're viewing in read-only mode.
   </div>
+
 </div>
 
-<script src="js/auth.js"></script>
-<script src="js/containers.js"></script>
-
 <script>
-  // Auth runs immediately — doesn't need Supabase
-  Auth.requireLogin();
-  Auth.applyRoleVisibility();
-  if (!Auth.isEditor()) document.getElementById("viewerNotice").classList.remove("hidden");
-  document.getElementById("userAvatar").textContent = Auth.getRole() === "editor" ? "ED" : "VW";
-  document.getElementById("todayDate").textContent = new Date().toLocaleDateString("en-GB", {weekday:"long",day:"numeric",month:"long",year:"numeric"});
-  function handleLogout() { if (confirm("Log out?")) Auth.logout(); }
+let pageReady = false;
 
-  // This runs after window.load (when AppDB is ready)
-  async function initPage() {
-    await loadSuppliers();
+function handleLogout() {
+  if (confirm("Log out?")) {
+    Auth.logout();
   }
+}
 
-  async function loadSuppliers() {
-    const suppliers = await Containers.fetchSuppliers();
-    const active    = await Containers.fetchActiveContainers();
-    const list = document.getElementById("suppliersList");
-    if (!suppliers.length) {
-      list.innerHTML = '<div style="padding:20px;color:#9CA3AF;font-size:13px">No suppliers yet.</div>';
+async function initPage() {
+  const list = document.getElementById("suppliersList");
+
+  try {
+    const session = await Auth.restoreSession();
+
+    if (!session || !session.success) {
+      window.location.href = "login.html";
       return;
     }
-    list.innerHTML = suppliers.map(s => {
-      const count = active.filter(c => c.supplier_id === s.id).length;
-      return `<div class="t-row" style="grid-template-columns:1fr 0.6fr;cursor:default">
-        <div style="font-weight:500">${s.name}</div>
-        <div class="muted">${count} container${count!==1?"s":""}</div>
-      </div>`;
-    }).join("");
+
+    Auth.applyRoleVisibility();
+
+    const role = Auth.getRole();
+
+    document.getElementById("userAvatar").textContent =
+      role === "admin" ? "AD" :
+      role === "editor" ? "ED" : "VW";
+
+    document.getElementById("todayDate").textContent =
+      new Date().toLocaleDateString("en-GB", {
+        weekday: "long",
+        day: "numeric",
+        month: "long",
+        year: "numeric"
+      });
+
+    if (!Auth.isEditor()) {
+      document.getElementById("viewerNotice")
+        .classList.remove("hidden");
+    }
+
+    if (!window.AppDB?.supabaseClient) {
+      throw new Error("Supabase connection is unavailable.");
+    }
+
+    pageReady = true;
+    await loadSuppliers();
+
+  } catch (error) {
+    console.error("Suppliers page error:", error);
+    list.innerHTML =
+      '<div style="padding:20px;color:#DC2626;font-size:13px">' +
+      'Could not load suppliers. Please refresh the page.</div>';
   }
+}
 
-  async function handleAddSupplier() {
-    if (!window.AppDB?.supabaseClient) { alert("Still connecting, please try again in a moment."); return; }
-    const input = document.getElementById("newSupplierName");
-    const name  = input.value.trim();
-    if (!name) return;
-    const result = await Containers.addSupplier(name);
-    if (!result.success) { alert("Could not add supplier: " + result.message); return; }
-    input.value = "";
-    loadSuppliers();
-  }
-</script>
+async function loadSuppliers() {
+  const list = document.getElementById("suppliersList");
 
-</body>
-</html>
+  try {
+    const suppliers = await Containers.fetchSuppliers();
+    const active = await Containers.fetchActiveContainers();
 
-
+    if (!suppliers || !suppliers.length) {
+      list.innerHTML =
+        '<div style="padding
