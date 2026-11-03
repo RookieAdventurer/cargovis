@@ -1,41 +1,58 @@
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Container Tracker — Archive</title>
-<script src="js/supabase.js"></script>
+<title>CargoVis — Archive</title>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/supabase-client.js"></script>
+<script src="js/auth.js"></script>
+
 <link rel="stylesheet" href="css/styles.css">
 </head>
+
 <body>
 
 <div class="navbar">
   <div class="nav-left">
     <div class="nav-icon">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2">
-        <rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8h4l3 3v5h-7V8z"/>
-        <circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/>
+      <svg width="16" height="16" viewBox="0 0 24 24"
+        fill="none" stroke="#fff" stroke-width="2">
+        <rect x="1" y="3" width="15" height="13" rx="1"/>
+        <path d="M16 8h4l3 3v5h-7V8z"/>
+        <circle cx="5.5" cy="18.5" r="2.5"/>
+        <circle cx="18.5" cy="18.5" r="2.5"/>
       </svg>
     </div>
-    <span class="nav-title">Container Tracker</span>
+    <span class="nav-title">CargoVis</span>
   </div>
+
   <div class="nav-links">
     <a href="index.html" class="nav-link">Active</a>
     <a href="archive.html" class="nav-link active">Archive</a>
     <a href="suppliers.html" class="nav-link editor-only">Suppliers</a>
   </div>
+
   <div class="nav-right">
     <span class="nav-date" id="todayDate"></span>
-    <div class="avatar" id="userAvatar" onclick="handleLogout()" title="Log out">··</div>
+    <div class="avatar" id="userAvatar"
+      onclick="handleLogout()" title="Log out">··</div>
   </div>
 </div>
 
 <div class="page-body">
+
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px">
     <div>
       <div style="font-size:18px;font-weight:500">Archive</div>
-      <div style="font-size:12px;color:var(--grey-text);margin-top:2px">All emptied containers — <span id="totalCount">0</span> total</div>
+      <div style="font-size:12px;color:var(--grey-text);margin-top:2px">
+        All emptied containers —
+        <span id="totalCount">0</span> total
+      </div>
     </div>
+
     <div style="display:flex;gap:8px">
       <button class="btn" onclick="doExportExcel()">↓ Excel</button>
       <button class="btn" onclick="doExportPDF()">↓ PDF</button>
@@ -44,131 +61,400 @@
 
   <div class="toolbar">
     <div class="search-box">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-      <input type="text" id="searchInput" placeholder="Search container, vessel, supplier..." oninput="renderTable()">
+      <svg width="13" height="13" viewBox="0 0 24 24"
+        fill="none" stroke="#9CA3AF" stroke-width="2">
+        <circle cx="11" cy="11" r="8"/>
+        <path d="m21 21-4.35-4.35"/>
+      </svg>
+      <input type="text" id="searchInput"
+        placeholder="Search container, vessel, supplier..."
+        oninput="renderTable()">
     </div>
-    <select class="btn" id="filterSupplier" onchange="renderTable()"><option value="">All suppliers</option></select>
+
+    <select class="btn" id="filterSupplier"
+      onchange="renderTable()">
+      <option value="">All suppliers</option>
+    </select>
   </div>
 
-  <div id="contentArea"><div style="padding:40px;text-align:center;color:var(--grey-text-light)">Loading...</div></div>
+  <div id="contentArea">
+    <div style="padding:40px;text-align:center;color:var(--grey-text-light)">
+      Loading...
+    </div>
+  </div>
+
 </div>
 
 <script>
-const SUPABASE_URL = "https://jwprxvobiunfnucrrzuo.supabase.co";
-const SUPABASE_KEY = "sb_publishable_QaPnj3hornmsAdbHrVM92g_6HPfgUI6";
+let db;
+let allArchived = [];
+let allSuppliers = [];
+let currentProfile = null;
 
-let db, allArchived = [], allSuppliers = [];
+// --------------------------------------------------
+// PAGE INITIALISATION
+// --------------------------------------------------
 
 window.addEventListener("load", async function() {
-  db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  try {
+    const session = await Auth.restoreSession();
 
-  const role = sessionStorage.getItem("ct_role");
-  if (!role) { window.location.href = "login.html"; return; }
-  document.querySelectorAll(".editor-only").forEach(el => el.style.display = role==="editor"?"":"none");
-  document.getElementById("userAvatar").textContent = role==="editor"?"ED":"VW";
-  document.getElementById("todayDate").textContent = fmtDate(new Date().toISOString());
+    if (!session.success) {
+      window.location.href = "login.html";
+      return;
+    }
 
-  await initArchive();
+    currentProfile = session.profile;
+    db = window.AppDB.supabaseClient;
+
+    if (!db) {
+      throw new Error("Supabase connection is unavailable.");
+    }
+
+    document.body.classList.toggle(
+      "viewer",
+      currentProfile.role === "viewer"
+    );
+
+    Auth.applyRoleVisibility();
+
+    document.getElementById("userAvatar").textContent =
+      currentProfile.username.substring(0, 2).toUpperCase();
+
+    document.getElementById("userAvatar").title =
+      currentProfile.username + " — " +
+      currentProfile.role + " — Log out";
+
+    document.getElementById("todayDate").textContent =
+      fmtDate(new Date().toISOString());
+
+    await initArchive();
+
+  } catch (error) {
+    console.error("Archive initialisation error:", error);
+
+    document.getElementById("contentArea").textContent =
+      "Unable to load the archive. Please refresh the page.";
+
+    alert("Unable to load CargoVis archive: " + error.message);
+  }
 });
 
-function handleLogout() { if(confirm("Log out?")){ sessionStorage.clear(); window.location.href="login.html"; } }
+// --------------------------------------------------
+// LOGOUT
+// --------------------------------------------------
+
+async function handleLogout() {
+  if (confirm("Log out of CargoVis?")) {
+    await Auth.logout();
+  }
+}
+
+// --------------------------------------------------
+// DATE AND HTML HELPERS
+// --------------------------------------------------
 
 function fmtDate(s) {
-  if(!s) return "—";
-  const d = new Date(s);
-  const days = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
-  const months = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+  if (!s) return "—";
+
+  const d = new Date(
+    /^\d{4}-\d{2}-\d{2}$/.test(s) ? s + "T00:00:00" : s
+  );
+
+  if (Number.isNaN(d.getTime())) return "—";
+
+  const days = [
+    "Sunday","Monday","Tuesday","Wednesday",
+    "Thursday","Friday","Saturday"
+  ];
+
+  const months = [
+    "January","February","March","April","May","June",
+    "July","August","September","October","November","December"
+  ];
+
   const n = d.getDate();
-  const sfx = (n>=11&&n<=13)?"th":{1:"st",2:"nd",3:"rd"}[n%10]||"th";
-  return `${days[d.getDay()]}, ${n}${sfx} ${months[d.getMonth()]} ${d.getFullYear()}`;
+  const suffix = (n >= 11 && n <= 13)
+    ? "th"
+    : ({1:"st",2:"nd",3:"rd"}[n % 10] || "th");
+
+  return `${days[d.getDay()]}, ${n}${suffix} ${months[d.getMonth()]} ${d.getFullYear()}`;
 }
+
+function escapeHTML(value) {
+  return String(value ?? "").replace(/[&<>"']/g, function(char) {
+    return {
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;"
+    }[char];
+  });
+}
+
+// --------------------------------------------------
+// DATABASE
+// --------------------------------------------------
+
+async function fetchArchived() {
+  const {data, error} = await db
+    .from("archived_containers")
+    .select("*,suppliers(name)")
+    .order("emptied_on", {ascending:false});
+
+  if (error) throw error;
+
+  return data || [];
+}
+
+async function fetchSuppliers() {
+  const {data, error} = await db
+    .from("suppliers")
+    .select("*")
+    .order("name");
+
+  if (error) throw error;
+
+  return data || [];
+}
+
+// --------------------------------------------------
+// LOAD ARCHIVE
+// --------------------------------------------------
 
 async function initArchive() {
   const [archived, suppliers] = await Promise.all([
-    db.from("archived_containers").select("*,suppliers(name)").order("emptied_on", {ascending:false}),
-    db.from("suppliers").select("*").order("name")
+    fetchArchived(),
+    fetchSuppliers()
   ]);
 
-  allArchived  = archived.data  || [];
-  allSuppliers = suppliers.data || [];
+  allArchived = archived;
+  allSuppliers = suppliers;
 
-  document.getElementById("totalCount").textContent = allArchived.length;
-
-  const sel = document.getElementById("filterSupplier");
-  allSuppliers.forEach(s => {
-    const o = document.createElement("option");
-    o.value = s.id; o.textContent = s.name;
-    sel.appendChild(o);
-  });
-
+  populateSupplierFilter();
   renderTable();
 }
 
+function populateSupplierFilter() {
+  const sel = document.getElementById("filterSupplier");
+
+  sel.innerHTML = '<option value="">All suppliers</option>';
+
+  allSuppliers.forEach(s => {
+    const option = document.createElement("option");
+    option.value = s.id;
+    option.textContent = s.name;
+    sel.appendChild(option);
+  });
+}
+
+// --------------------------------------------------
+// FILTERING
+// --------------------------------------------------
+
 function getFiltered() {
-  const q   = (document.getElementById("searchInput")?.value||"").toLowerCase();
-  const sup = document.getElementById("filterSupplier")?.value||"";
+  const q = (
+    document.getElementById("searchInput")?.value || ""
+  ).toLowerCase();
+
+  const sup =
+    document.getElementById("filterSupplier")?.value || "";
+
   return allArchived.filter(c => {
-    if (q && !`${c.container_number} ${c.vessel||""} ${c.suppliers?.name||""}`.toLowerCase().includes(q)) return false;
+    const searchText =
+      `${c.container_number} ${c.vessel || ""} ${c.suppliers?.name || ""}`
+      .toLowerCase();
+
+    if (q && !searchText.includes(q)) return false;
     if (sup && c.supplier_id !== sup) return false;
+
     return true;
   });
 }
+
+// --------------------------------------------------
+// RENDER ARCHIVE
+// --------------------------------------------------
 
 function renderTable() {
   const el = document.getElementById("contentArea");
   const filtered = getFiltered();
 
+  document.getElementById("totalCount").textContent =
+    allArchived.length;
+
   if (!filtered.length) {
-    el.innerHTML = `<div style="display:flex;flex-direction:column;align-items:center;padding:60px 24px;gap:12px;text-align:center">
-      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#D1D5DB" stroke-width="1.5"><path d="M21 8v13H3V8"/><path d="M1 3h22v5H1z"/><path d="M10 12h4"/></svg>
-      <div style="font-size:16px;font-weight:500;color:#374151">No archived containers yet</div>
-      <div style="font-size:12px;color:var(--grey-text-light);max-width:260px;line-height:1.7">Containers you mark as emptied will appear here with the date they were emptied</div>
-    </div>`;
+    el.innerHTML = `
+      <div style="display:flex;flex-direction:column;align-items:center;padding:60px 24px;gap:12px;text-align:center">
+        <svg width="48" height="48" viewBox="0 0 24 24"
+          fill="none" stroke="#D1D5DB" stroke-width="1.5">
+          <path d="M21 8v13H3V8"/>
+          <path d="M1 3h22v5H1z"/>
+          <path d="M10 12h4"/>
+        </svg>
+
+        <div style="font-size:16px;font-weight:500;color:#374151">
+          No archived containers found
+        </div>
+
+        <div style="font-size:12px;color:var(--grey-text-light);max-width:260px;line-height:1.7">
+          Containers you mark as emptied will appear here.
+        </div>
+      </div>`;
+
     return;
   }
 
-  // Group by supplier
   const grouped = {};
+
   filtered.forEach(c => {
     const name = c.suppliers?.name || "Unassigned";
+
     if (!grouped[name]) grouped[name] = [];
+
     grouped[name].push(c);
   });
 
   let html = '<div class="table-wrap">';
+
   Object.entries(grouped).forEach(([name, rows], i) => {
+
     html += `
-      <div class="section-header" ${i>0?'style="border-top:0.5px solid var(--grey-border)"':''}>
-        <span class="section-name">${name.toUpperCase()}</span>
-        <span class="section-count">${rows.length} container${rows.length!==1?'s':''}</span>
+      <div class="section-header"
+        ${i > 0 ? 'style="border-top:0.5px solid var(--grey-border)"' : ''}>
+        <span class="section-name">${escapeHTML(name.toUpperCase())}</span>
+        <span class="section-count">
+          ${rows.length} container${rows.length !== 1 ? "s" : ""}
+        </span>
       </div>
-      <div class="t-head" style="grid-template-columns:1.4fr 1.5fr 1.7fr 0.9fr 0.8fr 1.1fr">
+
+      <div class="t-head"
+        style="grid-template-columns:1.3fr 1.3fr 1.5fr 0.8fr 0.9fr 1.1fr 0.9fr">
         <div class="th">Container no.</div>
         <div class="th">Vessel</div>
         <div class="th">ETA</div>
         <div class="th">Line</div>
         <div class="th">Recipient</div>
         <div class="th">Emptied on</div>
+        <div class="th">Action</div>
       </div>`;
+
     rows.forEach(c => {
+
+      const deleteButton = Auth.isAdmin()
+        ? `<button class="btn"
+             style="color:#DC2626;border-color:#FECACA"
+             onclick="deleteArchived('${c.id}')">
+             Delete
+           </button>`
+        : `<span style="color:var(--grey-text-light)">—</span>`;
+
       html += `
-        <div class="t-row" style="grid-template-columns:1.4fr 1.5fr 1.7fr 0.9fr 0.8fr 1.1fr;cursor:default">
-          <div class="mono">${c.container_number}</div>
-          <div class="muted">${c.vessel||"—"}</div>
+        <div class="t-row"
+          style="grid-template-columns:1.3fr 1.3fr 1.5fr 0.8fr 0.9fr 1.1fr 0.9fr;cursor:default">
+
+          <div class="mono">${escapeHTML(c.container_number)}</div>
+
+          <div class="muted">${escapeHTML(c.vessel || "—")}</div>
+
           <div class="muted">${fmtDate(c.eta)}</div>
-          <div class="muted">${c.shipping_line||"—"}</div>
-          <div class="muted">${c.recipient||"WAGYINGO"}</div>
-          <div class="muted" style="color:#1D4ED8;font-weight:500">${fmtDate(c.emptied_on)}</div>
+
+          <div class="muted">${escapeHTML(c.shipping_line || "—")}</div>
+
+          <div class="muted">${escapeHTML(c.recipient || "WAGYINGO")}</div>
+
+          <div class="muted" style="color:#1D4ED8;font-weight:500">
+            ${fmtDate(c.emptied_on)}
+          </div>
+
+          <div>${deleteButton}</div>
+
         </div>`;
     });
   });
+
   html += "</div>";
+
   el.innerHTML = html;
 }
 
-function doExportExcel() { alert("Excel export coming soon!"); }
-function doExportPDF()   { alert("PDF export coming soon!"); }
+// --------------------------------------------------
+// DELETE ARCHIVED CONTAINER — ADMIN ONLY
+// --------------------------------------------------
+
+async function deleteArchived(id) {
+
+  if (!Auth.isAdmin()) {
+    alert("Only administrators can delete archived containers.");
+    return;
+  }
+
+  const c = allArchived.find(item => item.id === id);
+
+  if (!c) {
+    alert("Archived container could not be found. Refresh the page.");
+    return;
+  }
+
+  const confirmed = confirm(
+    `Permanently delete archived container ${c.container_number}?\n\nThis action cannot be undone.`
+  );
+
+  if (!confirmed) return;
+
+  const buttons = document.querySelectorAll(
+    `button[onclick="deleteArchived('${id}')"]`
+  );
+
+  buttons.forEach(button => {
+    button.disabled = true;
+    button.textContent = "Deleting...";
+  });
+
+  try {
+    const {data, error} = await db
+      .from("archived_containers")
+      .delete()
+      .eq("id", id)
+      .select("id");
+
+    if (error) throw error;
+
+    if (!data || data.length === 0) {
+      throw new Error(
+        "No record was deleted. Check the Admin permissions and database policies."
+      );
+    }
+
+    allArchived = allArchived.filter(item => item.id !== id);
+
+    renderTable();
+
+    alert("Archived container deleted successfully.");
+
+  } catch (error) {
+    console.error("Archive deletion error:", error);
+
+    alert("Could not delete archived container:\n" + error.message);
+
+    renderTable();
+  }
+}
+
+// --------------------------------------------------
+// EXPORTS
+// --------------------------------------------------
+
+function doExportExcel() {
+  alert("Excel export coming soon!");
+}
+
+function doExportPDF() {
+  alert("PDF export coming soon!");
+}
 </script>
 
 </body>
 </html>
+```
