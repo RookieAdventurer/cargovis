@@ -2,144 +2,307 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Container Tracker — Suppliers</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Suppliers - CargoVis</title>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="js/supabase-client.js"></script>
-<script src="js/auth.js"></script>
-<script src="js/containers.js"></script>
+  <link rel="stylesheet" href="css/styles.css">
 
-<link rel="stylesheet" href="css/styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase-client.js"></script>
+  <script src="js/auth.js"></script>
 </head>
 
 <body>
 
-<div class="navbar">
-  <div class="nav-left">
-    <div class="nav-icon">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
-        stroke="#fff" stroke-width="2">
-        <rect x="1" y="3" width="15" height="13" rx="1"/>
-        <path d="M16 8h4l3 3v5h-7V8z"/>
-        <circle cx="5.5" cy="18.5" r="2.5"/>
-        <circle cx="18.5" cy="18.5" r="2.5"/>
-      </svg>
-    </div>
-    <span class="nav-title">Container Tracker</span>
-  </div>
+  <nav class="navbar">
+    <div class="nav-brand">CargoVis</div>
 
-  <div class="nav-links">
-    <a href="index.html" class="nav-link">Active</a>
-    <a href="archive.html" class="nav-link">Archive</a>
-    <a href="suppliers.html" class="nav-link active editor-only">Suppliers</a>
-  </div>
-
-  <div class="nav-right">
-    <span class="nav-date" id="todayDate"></span>
-    <div class="avatar" id="userAvatar"
-      onclick="handleLogout()" title="Click to log out">··</div>
-  </div>
-</div>
-
-<div class="page-body" style="max-width:600px">
-
-  <div class="editor-only">
-    <div style="display:flex; gap:8px; margin-bottom:20px">
-      <input class="form-input" id="newSupplierName"
-        placeholder="New supplier name">
-      <button class="btn btn-primary" id="addSupplierBtn"
-        onclick="handleAddSupplier()" style="white-space:nowrap">
-        + Add supplier
-      </button>
-    </div>
-  </div>
-
-  <div class="table-wrap">
-    <div class="t-head" style="grid-template-columns:1fr 0.6fr">
-      <div class="th">Supplier name</div>
-      <div class="th">Active containers</div>
+    <div class="nav-links">
+      <a href="index.html">Dashboard</a>
+      <a href="active.html">Active</a>
+      <a href="archive.html">Archive</a>
+      <a href="suppliers.html" class="editor-only active">Suppliers</a>
     </div>
 
-    <div id="suppliersList">
-      <div style="padding:20px;color:#9CA3AF;font-size:13px">
-        Loading...
+    <div class="nav-user">
+      <span id="currentDate"></span>
+      <span id="userAvatar" class="user-avatar"></span>
+    </div>
+  </nav>
+
+  <main class="page-container">
+    <div class="page-header">
+      <h1>Suppliers</h1>
+      <p>Manage suppliers and view their active container counts.</p>
+    </div>
+
+    <div id="viewerNotice" style="display:none; margin-bottom:20px;">
+      You have read-only access to supplier information.
+    </div>
+
+    <section class="editor-only">
+      <h2>Add Supplier</h2>
+
+      <form id="supplierForm">
+        <div class="form-group">
+          <label for="supplierName">Supplier Name</label>
+          <input
+            type="text"
+            id="supplierName"
+            placeholder="Enter supplier name"
+            required
+          >
+        </div>
+
+        <div class="form-group">
+          <label for="supplierContact">Contact Person</label>
+          <input
+            type="text"
+            id="supplierContact"
+            placeholder="Enter contact person"
+          >
+        </div>
+
+        <div class="form-group">
+          <label for="supplierPhone">Phone</label>
+          <input
+            type="text"
+            id="supplierPhone"
+            placeholder="Enter phone number"
+          >
+        </div>
+
+        <div class="form-group">
+          <label for="supplierEmail">Email</label>
+          <input
+            type="email"
+            id="supplierEmail"
+            placeholder="Enter email address"
+          >
+        </div>
+
+        <button type="submit" id="addSupplierBtn">
+          Add Supplier
+        </button>
+      </form>
+    </section>
+
+    <section>
+      <h2>Supplier List</h2>
+
+      <p id="pageMessage"></p>
+
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Supplier Name</th>
+              <th>Contact Person</th>
+              <th>Phone</th>
+              <th>Email</th>
+              <th>Active Containers</th>
+            </tr>
+          </thead>
+
+          <tbody id="suppliersList">
+            <tr>
+              <td colspan="5">Loading suppliers...</td>
+            </tr>
+          </tbody>
+        </table>
       </div>
-    </div>
-  </div>
+    </section>
+  </main>
 
-  <div id="viewerNotice" class="hidden"
-    style="margin-top:16px;font-size:12px;
-    color:var(--grey-text-light);text-align:center">
-    You're viewing in read-only mode.
-  </div>
+  <script>
+    let currentProfile = null;
+    let db = null;
 
-</div>
+    window.addEventListener("load", async function () {
+      try {
+        const message = document.getElementById("pageMessage");
 
-<script>
-let pageReady = false;
+        message.textContent = "Checking your session...";
 
-function handleLogout() {
-  if (confirm("Log out?")) {
-    Auth.logout();
-  }
-}
+        const session = await Auth.restoreSession();
 
-async function initPage() {
-  const list = document.getElementById("suppliersList");
+        if (!session.success) {
+          window.location.href = "login.html";
+          return;
+        }
 
-  try {
-    const session = await Auth.restoreSession();
+        currentProfile = session.profile;
+        db = window.AppDB.supabaseClient;
 
-    if (!session || !session.success) {
-      window.location.href = "login.html";
-      return;
-    }
+        document.body.classList.toggle(
+          "viewer",
+          currentProfile.role === "viewer"
+        );
 
-    Auth.applyRoleVisibility();
+        Auth.applyRoleVisibility();
 
-    const role = Auth.getRole();
+        const avatar = document.getElementById("userAvatar");
 
-    document.getElementById("userAvatar").textContent =
-      role === "admin" ? "AD" :
-      role === "editor" ? "ED" : "VW";
+        if (avatar && currentProfile.username) {
+          avatar.textContent = currentProfile.username
+            .substring(0, 2)
+            .toUpperCase();
 
-    document.getElementById("todayDate").textContent =
-      new Date().toLocaleDateString("en-GB", {
-        weekday: "long",
-        day: "numeric",
-        month: "long",
-        year: "numeric"
+          avatar.title =
+            currentProfile.username + " — " +
+            currentProfile.role + " — Log out";
+
+          avatar.style.cursor = "pointer";
+          avatar.addEventListener("click", async function () {
+            await Auth.logout();
+            window.location.href = "login.html";
+          });
+        }
+
+        document.getElementById("currentDate").textContent =
+          new Date().toLocaleDateString();
+
+        if (!db) {
+          throw new Error("Supabase client could not be loaded.");
+        }
+
+        if (!Auth.isEditor()) {
+          document.getElementById("viewerNotice").style.display = "block";
+        }
+
+        await loadSuppliers();
+
+        document.getElementById("supplierForm")
+          .addEventListener("submit", addSupplier);
+
+      } catch (error) {
+        console.error("Suppliers page error:", error);
+
+        document.getElementById("pageMessage").textContent =
+          "Unable to load suppliers: " + error.message;
+      }
+    });
+
+    async function loadSuppliers() {
+      const list = document.getElementById("suppliersList");
+      const message = document.getElementById("pageMessage");
+
+      list.innerHTML = "<tr><td colspan='5'>Loading suppliers...</td></tr>";
+
+      const { data: suppliers, error } = await db
+        .from("suppliers")
+        .select("*")
+        .order("name", { ascending: true });
+
+      if (error) {
+        throw error;
+      }
+
+      const { data: containers, error: containerError } = await db
+        .from("containers")
+        .select("supplier_id")
+        .eq("status", "active");
+
+      if (containerError) {
+        throw containerError;
+      }
+
+      const counts = {};
+
+      (containers || []).forEach(container => {
+        if (container.supplier_id) {
+          counts[container.supplier_id] =
+            (counts[container.supplier_id] || 0) + 1;
+        }
       });
 
-    if (!Auth.isEditor()) {
-      document.getElementById("viewerNotice")
-        .classList.remove("hidden");
+      if (!suppliers || suppliers.length === 0) {
+        list.innerHTML =
+          "<tr><td colspan='5'>No suppliers found.</td></tr>";
+
+        message.textContent = "";
+        return;
+      }
+
+      list.innerHTML = "";
+
+      suppliers.forEach(supplier => {
+        const row = document.createElement("tr");
+
+        const values = [
+          supplier.name || "",
+          supplier.contact_person || "",
+          supplier.phone || "",
+          supplier.email || "",
+          counts[supplier.id] || 0
+        ];
+
+        values.forEach(value => {
+          const cell = document.createElement("td");
+          cell.textContent = value;
+          row.appendChild(cell);
+        });
+
+        list.appendChild(row);
+      });
+
+      message.textContent = "";
     }
 
-    if (!window.AppDB?.supabaseClient) {
-      throw new Error("Supabase connection is unavailable.");
+    async function addSupplier(event) {
+      event.preventDefault();
+
+      if (!Auth.isEditor()) {
+        alert("You do not have permission to add suppliers.");
+        return;
+      }
+
+      const button = document.getElementById("addSupplierBtn");
+      const name = document.getElementById("supplierName").value.trim();
+      const contact = document.getElementById("supplierContact").value.trim();
+      const phone = document.getElementById("supplierPhone").value.trim();
+      const email = document.getElementById("supplierEmail").value.trim();
+
+      if (!name) {
+        alert("Please enter a supplier name.");
+        return;
+      }
+
+      button.disabled = true;
+      button.textContent = "Saving...";
+
+      try {
+        const { error } = await db
+          .from("suppliers")
+          .insert([{
+            name: name,
+            contact_person: contact || null,
+            phone: phone || null,
+            email: email || null
+          }]);
+
+        if (error) {
+          throw error;
+        }
+
+        document.getElementById("supplierForm").reset();
+
+        alert("Supplier added successfully.");
+
+        await loadSuppliers();
+
+      } catch (error) {
+        console.error("Add supplier error:", error);
+        alert("Could not add supplier: " + error.message);
+
+      } finally {
+        button.disabled = false;
+        button.textContent = "Add Supplier";
+      }
     }
+  </script>
 
-    pageReady = true;
-    await loadSuppliers();
-
-  } catch (error) {
-    console.error("Suppliers page error:", error);
-    list.innerHTML =
-      '<div style="padding:20px;color:#DC2626;font-size:13px">' +
-      'Could not load suppliers. Please refresh the page.</div>';
-  }
-}
-
-async function loadSuppliers() {
-  const list = document.getElementById("suppliersList");
-
-  try {
-    const suppliers = await Containers.fetchSuppliers();
-    const active = await Containers.fetchActiveContainers();
-
-    if (!suppliers || !suppliers.length) {
-      list.innerHTML =
-        '<div style="padding
+</body>
+</html>
+```
