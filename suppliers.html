@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -10,43 +11,131 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/supabase-client.js"></script>
   <script src="js/auth.js"></script>
+
+  <style>
+    .supplier-grid {
+      display: grid;
+      grid-template-columns: 2fr 1.4fr 1.2fr 1.7fr 1.2fr;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .supplier-form {
+      background: #fff;
+      border: 0.5px solid var(--grey-border);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 28px;
+      max-width: 750px;
+    }
+
+    .supplier-form .form-row {
+      margin-bottom: 14px;
+    }
+
+    .supplier-form .form-input {
+      display: block;
+    }
+
+    .supplier-form button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .supplier-list {
+      margin-top: 12px;
+    }
+
+    .supplier-list .t-row {
+      cursor: default;
+    }
+
+    .supplier-list .t-row:hover {
+      background: #FAFAFA;
+    }
+
+    .supplier-list .t-head,
+    .supplier-list .t-row {
+      grid-template-columns: 2fr 1.4fr 1.2fr 1.7fr 1.2fr;
+    }
+
+    @media (max-width: 760px) {
+      .supplier-list {
+        overflow-x: auto;
+      }
+
+      .supplier-list .supplier-grid {
+        min-width: 680px;
+      }
+
+      .supplier-form .form-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
 </head>
 
 <body>
 
+  <!-- Navigation -->
   <nav class="navbar">
-    <div class="nav-brand">CargoVis</div>
-
-    <div class="nav-links">
-      <a href="index.html">Dashboard</a>
-      <a href="active.html">Active</a>
-      <a href="archive.html">Archive</a>
-      <a href="suppliers.html" class="editor-only active">Suppliers</a>
+    <div class="nav-left">
+      <div class="nav-icon">🚢</div>
+      <span class="nav-title">CargoVis</span>
     </div>
 
-    <div class="nav-user">
-      <span id="currentDate"></span>
-      <span id="userAvatar" class="user-avatar"></span>
+    <div class="nav-links">
+      <a href="index.html" class="nav-link">Dashboard</a>
+      <a href="active.html" class="nav-link">Active</a>
+      <a href="archive.html" class="nav-link">Archive</a>
+      <a href="suppliers.html" class="nav-link active editor-only">Suppliers</a>
+    </div>
+
+    <div class="nav-right">
+      <span id="currentDate" class="nav-date"></span>
+      <div id="userAvatar" class="avatar"></div>
     </div>
   </nav>
 
-  <main class="page-container">
-    <div class="page-header">
-      <h1>Suppliers</h1>
-      <p>Manage suppliers and view their active container counts.</p>
+  <!-- Page -->
+  <main class="page-body">
+
+    <div style="margin-bottom:24px;">
+      <h1 style="font-size:22px; font-weight:600; margin-bottom:6px;">
+        Suppliers
+      </h1>
+      <p class="muted">
+        Manage suppliers and view their active container counts.
+      </p>
     </div>
 
-    <div id="viewerNotice" style="display:none; margin-bottom:20px;">
+    <div id="viewerNotice"
+         class="hidden"
+         style="background:var(--bg-subtle); padding:14px 18px;
+                border-radius:8px; margin-bottom:20px;">
       You have read-only access to supplier information.
     </div>
 
-    <section class="editor-only">
-      <h2>Add Supplier</h2>
+    <!-- Add Supplier -->
+    <section class="supplier-form editor-only">
+      <div style="margin-bottom:18px;">
+        <h2 style="font-size:15px; font-weight:600;">
+          Add Supplier
+        </h2>
+        <p class="muted" style="margin-top:4px;">
+          Enter the supplier's details below.
+        </p>
+      </div>
 
       <form id="supplierForm">
-        <div class="form-group">
-          <label for="supplierName">Supplier Name</label>
+
+        <div class="form-row">
+          <label class="form-label" for="supplierName">
+            Supplier Name *
+          </label>
           <input
+            class="form-input"
             type="text"
             id="supplierName"
             placeholder="Enter supplier name"
@@ -54,64 +143,89 @@
           >
         </div>
 
-        <div class="form-group">
-          <label for="supplierContact">Contact Person</label>
-          <input
-            type="text"
-            id="supplierContact"
-            placeholder="Enter contact person"
-          >
+        <div class="form-grid">
+          <div class="form-row">
+            <label class="form-label" for="supplierContact">
+              Contact Person
+            </label>
+            <input
+              class="form-input"
+              type="text"
+              id="supplierContact"
+              placeholder="Enter contact person"
+            >
+          </div>
+
+          <div class="form-row">
+            <label class="form-label" for="supplierPhone">
+              Phone
+            </label>
+            <input
+              class="form-input"
+              type="text"
+              id="supplierPhone"
+              placeholder="Enter phone number"
+            >
+          </div>
         </div>
 
-        <div class="form-group">
-          <label for="supplierPhone">Phone</label>
+        <div class="form-row">
+          <label class="form-label" for="supplierEmail">
+            Email
+          </label>
           <input
-            type="text"
-            id="supplierPhone"
-            placeholder="Enter phone number"
-          >
-        </div>
-
-        <div class="form-group">
-          <label for="supplierEmail">Email</label>
-          <input
+            class="form-input"
             type="email"
             id="supplierEmail"
             placeholder="Enter email address"
           >
         </div>
 
-        <button type="submit" id="addSupplierBtn">
-          Add Supplier
+        <button type="submit"
+                id="addSupplierBtn"
+                class="btn btn-primary">
+          + Add Supplier
         </button>
+
       </form>
     </section>
 
+    <!-- Supplier List -->
     <section>
-      <h2>Supplier List</h2>
+      <div style="display:flex; justify-content:space-between;
+                  align-items:center; margin-bottom:12px;">
+        <h2 style="font-size:15px; font-weight:600;">
+          Supplier List
+        </h2>
+        <span id="supplierCount" class="muted"></span>
+      </div>
 
-      <p id="pageMessage"></p>
+      <p id="pageMessage" class="muted" style="margin-bottom:10px;"></p>
 
-      <div class="table-container">
-        <table>
-          <thead>
-            <tr>
-              <th>Supplier Name</th>
-              <th>Contact Person</th>
-              <th>Phone</th>
-              <th>Email</th>
-              <th>Active Containers</th>
-            </tr>
-          </thead>
+      <div class="table-wrap supplier-list">
 
-          <tbody id="suppliersList">
-            <tr>
-              <td colspan="5">Loading suppliers...</td>
-            </tr>
-          </tbody>
-        </table>
+        <div class="section-header">
+          <span class="section-name">SUPPLIERS</span>
+          <span class="section-count">Supplier directory</span>
+        </div>
+
+        <div class="t-head supplier-grid">
+          <span class="th">Supplier Name</span>
+          <span class="th">Contact Person</span>
+          <span class="th">Phone</span>
+          <span class="th">Email</span>
+          <span class="th">Active Containers</span>
+        </div>
+
+        <div id="suppliersList">
+          <div style="padding:20px;" class="muted">
+            Loading suppliers...
+          </div>
+        </div>
+
       </div>
     </section>
+
   </main>
 
   <script>
@@ -152,7 +266,6 @@
             currentProfile.username + " — " +
             currentProfile.role + " — Log out";
 
-          avatar.style.cursor = "pointer";
           avatar.addEventListener("click", async function () {
             await Auth.logout();
             window.location.href = "login.html";
@@ -167,7 +280,8 @@
         }
 
         if (!Auth.isEditor()) {
-          document.getElementById("viewerNotice").style.display = "block";
+          document.getElementById("viewerNotice")
+            .classList.remove("hidden");
         }
 
         await loadSuppliers();
@@ -187,25 +301,22 @@
       const list = document.getElementById("suppliersList");
       const message = document.getElementById("pageMessage");
 
-      list.innerHTML = "<tr><td colspan='5'>Loading suppliers...</td></tr>";
+      list.innerHTML =
+        '<div style="padding:20px;" class="muted">Loading suppliers...</div>';
 
       const { data: suppliers, error } = await db
         .from("suppliers")
         .select("*")
         .order("name", { ascending: true });
 
-      if (error) {
-        throw error;
-      }
+      if (error) throw error;
 
       const { data: containers, error: containerError } = await db
         .from("containers")
         .select("supplier_id")
         .eq("status", "active");
 
-      if (containerError) {
-        throw containerError;
-      }
+      if (containerError) throw containerError;
 
       const counts = {};
 
@@ -216,9 +327,15 @@
         }
       });
 
+      document.getElementById("supplierCount").textContent =
+        (suppliers || []).length + " suppliers";
+
       if (!suppliers || suppliers.length === 0) {
         list.innerHTML =
-          "<tr><td colspan='5'>No suppliers found.</td></tr>";
+          '<div class="empty-state">' +
+          '<div class="empty-title">No suppliers found</div>' +
+          '<div class="empty-sub">Add your first supplier using the form above.</div>' +
+          '</div>';
 
         message.textContent = "";
         return;
@@ -227,7 +344,8 @@
       list.innerHTML = "";
 
       suppliers.forEach(supplier => {
-        const row = document.createElement("tr");
+        const row = document.createElement("div");
+        row.className = "t-row supplier-grid";
 
         const values = [
           supplier.name || "",
@@ -237,9 +355,19 @@
           counts[supplier.id] || 0
         ];
 
-        values.forEach(value => {
-          const cell = document.createElement("td");
+        values.forEach((value, index) => {
+          const cell = document.createElement("div");
+
           cell.textContent = value;
+
+          if (index === 0) {
+            cell.style.fontWeight = "600";
+          }
+
+          if (index === 4) {
+            cell.className = "mono";
+          }
+
           row.appendChild(cell);
         });
 
@@ -258,6 +386,7 @@
       }
 
       const button = document.getElementById("addSupplierBtn");
+
       const name = document.getElementById("supplierName").value.trim();
       const contact = document.getElementById("supplierContact").value.trim();
       const phone = document.getElementById("supplierPhone").value.trim();
@@ -281,9 +410,7 @@
             email: email || null
           }]);
 
-        if (error) {
-          throw error;
-        }
+        if (error) throw error;
 
         document.getElementById("supplierForm").reset();
 
@@ -297,7 +424,7 @@
 
       } finally {
         button.disabled = false;
-        button.textContent = "Add Supplier";
+        button.textContent = "+ Add Supplier";
       }
     }
   </script>
