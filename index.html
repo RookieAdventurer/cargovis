@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -169,6 +168,43 @@ let activeDetailId = null;
 let currentView = "supplier";
 let currentProfile = null;
 let pendingRows = [];
+
+// --------------------------------------------------
+// HTML SAFETY HELPERS
+// --------------------------------------------------
+
+function escapeHTML(value) {
+  return String(value ?? "").replace(/[&<>"']/g, char => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;"
+  })[char]);
+}
+
+function buildSupplierOptions(selectedId) {
+  const selected = String(selectedId ?? "");
+
+  return `
+    <option value="">Select supplier</option>
+    ${allSuppliers.map(s => `
+      <option
+        value="${escapeHTML(s.id)}"
+        ${String(s.id) === selected ? "selected" : ""}
+      >${escapeHTML(s.name)}</option>
+    `).join("")}
+  `;
+}
+
+function recipientSuggestions() {
+  return `
+    <datalist id="recipientOptions">
+      <option value="WAGYINGO">
+      <option value="Lucy">
+    </datalist>
+  `;
+}
 
 // --------------------------------------------------
 // INITIALISATION AND AUTHENTICATION
@@ -350,9 +386,6 @@ async function markEmptiedDB(c) {
 // STATUS AND DATE HELPERS
 // --------------------------------------------------
 
-// An estimated arrival date is not proof of actual arrival.
-// Until an actual arrival milestone is recorded, the container
-// remains NOT ARRIVED.
 function computeStatus(container) {
   if (typeof container === "string") return "NOT ARRIVED";
 
@@ -805,15 +838,15 @@ async function openAddModal() {
     allSuppliers = await fetchSuppliers();
   }
 
-  const opts = allSuppliers.map(s =>
-    `<option value="${s.id}">${s.name}</option>`
-  ).join("");
+  const opts = buildSupplierOptions(
+    allSuppliers.length ? allSuppliers[0].id : ""
+  );
 
   document.getElementById("modalRoot").innerHTML = `
     <div class="modal-overlay" onclick="closeOverlay(event)">
       <div class="modal" onclick="event.stopPropagation()">
         <div class="modal-title">Add containers</div>
-        <div class="modal-sub">Paste container numbers — one per line. We'll detect the shipping line automatically.</div>
+        <div class="modal-sub">Paste container numbers — one per line. We'll detect the shipping line automatically. You can assign suppliers and recipients individually in the next step.</div>
 
         <div class="form-row">
           <label class="form-label">Container numbers</label>
@@ -822,15 +855,19 @@ async function openAddModal() {
 
         <div class="form-grid">
           <div class="form-row">
-            <label class="form-label">Supplier</label>
+            <label class="form-label">Default supplier</label>
             <select class="form-select" id="supplierSel">${opts}</select>
           </div>
           <div class="form-row">
             <label class="form-label">Default recipient</label>
-            <select class="form-select" id="recipientSel">
-              <option value="WAGYINGO">WAGYINGO</option>
-              <option value="Lucy">Lucy</option>
-            </select>
+            <input
+              class="form-input"
+              id="recipientSel"
+              list="recipientOptions"
+              value="WAGYINGO"
+              placeholder="Enter recipient name"
+            >
+            ${recipientSuggestions()}
           </div>
         </div>
 
@@ -856,7 +893,7 @@ async function runLookup() {
   }
 
   const supplierId = document.getElementById("supplierSel").value;
-  const recipient = document.getElementById("recipientSel").value;
+  const recipient = document.getElementById("recipientSel").value.trim();
 
   pendingRows = numbers.map(n => ({
     container_number:n,
@@ -864,7 +901,7 @@ async function runLookup() {
     eta:"",
     shipping_line:detectLine(n),
     supplier_id:supplierId,
-    recipient
+    recipient:recipient || "WAGYINGO"
   }));
 
   renderReviewModal();
@@ -872,11 +909,48 @@ async function runLookup() {
 
 function renderReviewModal() {
   const rowsHTML = pendingRows.map((r,i) => `
-    <div style="display:grid;grid-template-columns:1.3fr 1.4fr 1.3fr 0.9fr;gap:6px;padding:9px 12px;border-bottom:0.5px solid var(--grey-border);align-items:center">
-      <div class="mono" style="font-size:11px">${r.container_number}</div>
-      <input class="form-input" style="height:30px;font-size:11px" value="${r.vessel}" onchange="pendingRows[${i}].vessel=this.value" placeholder="Vessel name">
-      <input type="date" class="form-input" style="height:30px;font-size:11px" value="${r.eta}" onchange="pendingRows[${i}].eta=this.value">
-      <select class="form-input" style="height:30px;font-size:11px" onchange="pendingRows[${i}].shipping_line=this.value">
+    <div style="display:grid;grid-template-columns:1.05fr 1.35fr 1.15fr 1.2fr 1.1fr 0.9fr;gap:6px;padding:9px 12px;border-bottom:0.5px solid var(--grey-border);align-items:center;min-width:1050px">
+
+      <div class="mono" style="font-size:11px">${escapeHTML(r.container_number)}</div>
+
+      <select
+        class="form-input"
+        style="height:32px;font-size:11px;min-width:0"
+        onchange="pendingRows[${i}].supplier_id=this.value"
+      >
+        ${buildSupplierOptions(r.supplier_id)}
+      </select>
+
+      <input
+        class="form-input"
+        style="height:32px;font-size:11px;min-width:0"
+        list="recipientOptions"
+        value="${escapeHTML(r.recipient)}"
+        placeholder="Recipient"
+        oninput="pendingRows[${i}].recipient=this.value"
+      >
+
+      <input
+        class="form-input"
+        style="height:32px;font-size:11px;min-width:0"
+        value="${escapeHTML(r.vessel)}"
+        onchange="pendingRows[${i}].vessel=this.value"
+        placeholder="Vessel name"
+      >
+
+      <input
+        type="date"
+        class="form-input"
+        style="height:32px;font-size:11px;min-width:0"
+        value="${escapeHTML(r.eta)}"
+        onchange="pendingRows[${i}].eta=this.value"
+      >
+
+      <select
+        class="form-input"
+        style="height:32px;font-size:11px;min-width:0"
+        onchange="pendingRows[${i}].shipping_line=this.value"
+      >
         ${["MAERSK","HAPAG","CMA CGM","MSC","UNKNOWN"].map(l =>
           `<option ${r.shipping_line === l ? "selected" : ""}>${l}</option>`
         ).join("")}
@@ -885,17 +959,24 @@ function renderReviewModal() {
 
   document.getElementById("modalRoot").innerHTML = `
     <div class="modal-overlay" onclick="closeOverlay(event)">
-      <div class="modal" style="max-width:680px" onclick="event.stopPropagation()">
-        <div class="modal-title">Review & confirm</div>
-        <div class="modal-sub">${pendingRows.length} containers ready. Fill in vessel and ETA for each, then save.</div>
+      <div class="modal" style="max-width:1100px;width:95%" onclick="event.stopPropagation()">
 
-        <div style="background:var(--bg-subtle);border:0.5px solid var(--grey-border);border-radius:10px;overflow:hidden;margin-bottom:8px">
-          <div style="display:grid;grid-template-columns:1.3fr 1.4fr 1.3fr 0.9fr;gap:6px;padding:8px 12px;border-bottom:0.5px solid var(--grey-border);background:#fff">
+        <div class="modal-title">Review & confirm</div>
+        <div class="modal-sub">${pendingRows.length} containers ready. Choose a supplier and recipient for each container, then enter vessel and ETA details.</div>
+
+        ${recipientSuggestions()}
+
+        <div style="background:var(--bg-subtle);border:0.5px solid var(--grey-border);border-radius:10px;overflow-x:auto;margin-bottom:8px">
+
+          <div style="display:grid;grid-template-columns:1.05fr 1.35fr 1.15fr 1.2fr 1.1fr 0.9fr;gap:6px;padding:8px 12px;border-bottom:0.5px solid var(--grey-border);background:#fff;min-width:1050px">
             <div class="th">Container</div>
+            <div class="th">Supplier *</div>
+            <div class="th">Recipient</div>
             <div class="th">Vessel</div>
             <div class="th">ETA *</div>
             <div class="th">Line</div>
           </div>
+
           ${rowsHTML}
         </div>
 
@@ -910,10 +991,22 @@ function renderReviewModal() {
 async function confirmSave() {
   if (!Auth.isEditor()) return;
 
-  const missing = pendingRows.filter(r => !r.eta);
+  const missingETA = pendingRows.filter(r => !r.eta);
+  const missingSupplier = pendingRows.filter(r => !r.supplier_id);
+  const missingRecipient = pendingRows.filter(r => !r.recipient.trim());
 
-  if (missing.length) {
-    alert(`Please enter ETA for: ${missing.map(r => r.container_number).join(", ")}`);
+  if (missingETA.length) {
+    alert(`Please enter ETA for: ${missingETA.map(r => r.container_number).join(", ")}`);
+    return;
+  }
+
+  if (missingSupplier.length) {
+    alert(`Please select a supplier for: ${missingSupplier.map(r => r.container_number).join(", ")}`);
+    return;
+  }
+
+  if (missingRecipient.length) {
+    alert(`Please enter a recipient for: ${missingRecipient.map(r => r.container_number).join(", ")}`);
     return;
   }
 
@@ -948,9 +1041,7 @@ async function openEditModal(id) {
   const c = allContainers.find(x => x.id === id);
   if (!c) return;
 
-  const opts = allSuppliers.map(s =>
-    `<option value="${s.id}" ${s.id === c.supplier_id ? "selected" : ""}>${s.name}</option>`
-  ).join("");
+  const opts = buildSupplierOptions(c.supplier_id);
 
   document.getElementById("modalRoot").innerHTML = `
     <div class="modal-overlay" onclick="closeOverlay(event)">
@@ -959,7 +1050,7 @@ async function openEditModal(id) {
 
         <div class="form-row">
           <label class="form-label">Container number</label>
-          <input class="form-input" id="eNum" value="${c.container_number}" style="font-family:monospace">
+          <input class="form-input" id="eNum" value="${escapeHTML(c.container_number)}" style="font-family:monospace">
         </div>
 
         <div class="form-grid">
@@ -979,20 +1070,24 @@ async function openEditModal(id) {
 
         <div class="form-row">
           <label class="form-label">Vessel</label>
-          <input class="form-input" id="eVes" value="${c.vessel || ""}">
+          <input class="form-input" id="eVes" value="${escapeHTML(c.vessel || "")}">
         </div>
 
         <div class="form-grid">
           <div class="form-row">
             <label class="form-label">ETA</label>
-            <input type="date" class="form-input" id="eEta" value="${c.eta || ""}">
+            <input type="date" class="form-input" id="eEta" value="${escapeHTML(c.eta || "")}">
           </div>
           <div class="form-row">
             <label class="form-label">Recipient</label>
-            <select class="form-select" id="eRec">
-              <option ${c.recipient === "WAGYINGO" ? "selected" : ""}>WAGYINGO</option>
-              <option ${c.recipient === "Lucy" ? "selected" : ""}>Lucy</option>
-            </select>
+            <input
+              class="form-input"
+              id="eRec"
+              list="recipientOptions"
+              value="${escapeHTML(c.recipient || "WAGYINGO")}"
+              placeholder="Enter recipient name"
+            >
+            ${recipientSuggestions()}
           </div>
         </div>
 
@@ -1013,8 +1108,18 @@ async function saveEdit(id) {
     shipping_line:document.getElementById("eLine").value,
     vessel:document.getElementById("eVes").value,
     eta:document.getElementById("eEta").value,
-    recipient:document.getElementById("eRec").value
+    recipient:document.getElementById("eRec").value.trim()
   };
+
+  if (!updates.supplier_id) {
+    alert("Please select a supplier.");
+    return;
+  }
+
+  if (!updates.recipient) {
+    alert("Please enter a recipient.");
+    return;
+  }
 
   showLoading("Saving...", "");
 
