@@ -219,4 +219,258 @@
         if (avatar && currentProfile.username) {
           avatar.textContent = currentProfile.username
             .substring(0, 2)
-            .toUpper
+            .toUpperCase();
+
+          avatar.title =
+            currentProfile.username + " — " +
+            currentProfile.role + " — Log out";
+
+          avatar.addEventListener("click", async function () {
+            await Auth.logout();
+            window.location.href = "login.html";
+          });
+        }
+
+        document.getElementById("currentDate").textContent =
+          new Date().toLocaleDateString();
+
+        if (!db) {
+          throw new Error("Supabase client could not be loaded.");
+        }
+
+        if (!Auth.isEditor()) {
+          document.getElementById("viewerNotice")
+            .classList.remove("hidden");
+        }
+
+        await loadSuppliers();
+
+        document.getElementById("supplierForm")
+          .addEventListener("submit", addSupplier);
+
+      } catch (error) {
+        console.error("Suppliers page error:", error);
+
+        document.getElementById("pageMessage").textContent =
+          "Unable to load suppliers: " + error.message;
+      }
+    });
+
+    async function loadSuppliers() {
+      const list = document.getElementById("suppliersList");
+      const message = document.getElementById("pageMessage");
+
+      list.innerHTML =
+        '<div style="padding:20px;" class="muted">Loading suppliers...</div>';
+
+      const { data: suppliers, error } = await db
+        .from("suppliers")
+        .select("id, name, created_at")
+        .order("name", { ascending: true });
+
+      if (error) throw error;
+
+      const { data: containers, error: containerError } = await db
+        .from("containers")
+        .select("supplier_id, status");
+
+      if (containerError) throw containerError;
+
+      const counts = {};
+
+      (containers || []).forEach(container => {
+        if (
+          container.supplier_id &&
+          container.status === "active"
+        ) {
+          counts[container.supplier_id] =
+            (counts[container.supplier_id] || 0) + 1;
+        }
+      });
+
+      document.getElementById("supplierCount").textContent =
+        (suppliers || []).length + " suppliers";
+
+      if (!suppliers || suppliers.length === 0) {
+        list.innerHTML =
+          '<div class="empty-state">' +
+          '<div class="empty-title">No suppliers found</div>' +
+          '<div class="empty-sub">Add your first supplier using the form above.</div>' +
+          '</div>';
+
+        message.textContent = "";
+        return;
+      }
+
+      list.innerHTML = "";
+
+      suppliers.forEach(supplier => {
+        const row = document.createElement("div");
+        row.className = "t-row supplier-grid";
+
+        const createdDate = supplier.created_at
+          ? new Date(supplier.created_at).toLocaleDateString()
+          : "—";
+
+        const values = [
+          supplier.name || "",
+          createdDate,
+          counts[supplier.id] || 0
+        ];
+
+        values.forEach((value, index) => {
+          const cell = document.createElement("div");
+          cell.textContent = value;
+
+          if (index === 0) {
+            cell.style.fontWeight = "600";
+          }
+
+          if (index === 2) {
+            cell.className = "mono";
+          }
+
+          row.appendChild(cell);
+        });
+
+        const actionCell = document.createElement("div");
+
+        if (Auth.isAdmin()) {
+          const deleteButton = document.createElement("button");
+
+          deleteButton.type = "button";
+          deleteButton.className = "delete-supplier-btn";
+          deleteButton.textContent = "Delete";
+
+          deleteButton.addEventListener("click", function () {
+            deleteSupplier(supplier.id, supplier.name, deleteButton);
+          });
+
+          actionCell.appendChild(deleteButton);
+        } else {
+          actionCell.textContent = "—";
+        }
+
+        row.appendChild(actionCell);
+        list.appendChild(row);
+      });
+
+      message.textContent = "";
+    }
+
+    async function addSupplier(event) {
+      event.preventDefault();
+
+      if (!Auth.isEditor()) {
+        alert("You do not have permission to add suppliers.");
+        return;
+      }
+
+      const button = document.getElementById("addSupplierBtn");
+      const name = document.getElementById("supplierName").value.trim();
+
+      if (!name) {
+        alert("Please enter a supplier name.");
+        return;
+      }
+
+      button.disabled = true;
+      button.textContent = "Saving...";
+
+      try {
+        const { error } = await db
+          .from("suppliers")
+          .insert([{ name: name }]);
+
+        if (error) throw error;
+
+        document.getElementById("supplierForm").reset();
+
+        alert("Supplier added successfully.");
+
+        await loadSuppliers();
+
+      } catch (error) {
+        console.error("Add supplier error:", error);
+        alert("Could not add supplier: " + error.message);
+
+      } finally {
+        button.disabled = false;
+        button.textContent = "+ Add Supplier";
+      }
+    }
+
+    async function deleteSupplier(supplierId, supplierName, button) {
+      if (!Auth.isAdmin()) {
+        alert("Only an Admin can delete suppliers.");
+        return;
+      }
+
+      const confirmed = confirm(
+        'Are you sure you want to delete "' +
+        supplierName +
+        '"? This action cannot be undone.'
+      );
+
+      if (!confirmed) return;
+
+      button.disabled = true;
+      button.textContent = "Checking...";
+
+      try {
+        // Check for ALL linked containers, not only active ones.
+        const { data: linkedContainers, error: checkError } = await db
+          .from("containers")
+          .select("id")
+          .eq("supplier_id", supplierId)
+          .limit(1);
+
+        if (checkError) throw checkError;
+
+        if (linkedContainers && linkedContainers.length > 0) {
+          alert(
+            'This supplier cannot be deleted because containers are linked to it. ' +
+            'Reassign those containers first.'
+          );
+
+          return;
+        }
+
+        const finalConfirmation = confirm(
+          'No linked containers were found. Delete "' +
+          supplierName + '" permanently?'
+        );
+
+        if (!finalConfirmation) return;
+
+        button.textContent = "Deleting...";
+
+        const { error: deleteError } = await db
+          .from("suppliers")
+          .delete()
+          .eq("id", supplierId);
+
+        if (deleteError) throw deleteError;
+
+        alert("Supplier deleted successfully.");
+
+        await loadSuppliers();
+
+      } catch (error) {
+        console.error("Delete supplier error:", error);
+
+        alert(
+          "Could not delete supplier: " + error.message
+        );
+
+      } finally {
+        if (button.isConnected) {
+          button.disabled = false;
+          button.textContent = "Delete";
+        }
+      }
+    }
+  </script>
+
+</body>
+</html>
