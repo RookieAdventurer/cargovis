@@ -14,7 +14,7 @@
   <style>
     .supplier-grid {
       display: grid;
-      grid-template-columns: 2fr 1.5fr 1.2fr;
+      grid-template-columns: 2fr 1.5fr 1.2fr 1fr;
       gap: 8px;
       align-items: center;
     }
@@ -38,7 +38,7 @@
 
     .supplier-list .t-head,
     .supplier-list .t-row {
-      grid-template-columns: 2fr 1.5fr 1.2fr;
+      grid-template-columns: 2fr 1.5fr 1.2fr 1fr;
     }
 
     .supplier-list .t-row {
@@ -49,13 +49,32 @@
       background: #FAFAFA;
     }
 
+    .delete-supplier-btn {
+      background: #fff;
+      color: #b42318;
+      border: 1px solid #e5b8b5;
+      border-radius: 6px;
+      padding: 6px 10px;
+      cursor: pointer;
+      font-size: 12px;
+    }
+
+    .delete-supplier-btn:hover {
+      background: #fff1f0;
+    }
+
+    .delete-supplier-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
     @media (max-width: 760px) {
       .supplier-list {
         overflow-x: auto;
       }
 
       .supplier-list .supplier-grid {
-        min-width: 480px;
+        min-width: 600px;
       }
     }
   </style>
@@ -155,6 +174,7 @@
           <span class="th">Supplier Name</span>
           <span class="th">Date Created</span>
           <span class="th">Active Containers</span>
+          <span class="th">Actions</span>
         </div>
 
         <div id="suppliersList">
@@ -174,9 +194,8 @@
 
     window.addEventListener("load", async function () {
       try {
-        const message = document.getElementById("pageMessage");
-
-        message.textContent = "Checking your session...";
+        document.getElementById("pageMessage").textContent =
+          "Checking your session...";
 
         const session = await Auth.restoreSession();
 
@@ -200,168 +219,4 @@
         if (avatar && currentProfile.username) {
           avatar.textContent = currentProfile.username
             .substring(0, 2)
-            .toUpperCase();
-
-          avatar.title =
-            currentProfile.username + " — " +
-            currentProfile.role + " — Log out";
-
-          avatar.addEventListener("click", async function () {
-            await Auth.logout();
-            window.location.href = "login.html";
-          });
-        }
-
-        document.getElementById("currentDate").textContent =
-          new Date().toLocaleDateString();
-
-        if (!db) {
-          throw new Error("Supabase client could not be loaded.");
-        }
-
-        if (!Auth.isEditor()) {
-          document.getElementById("viewerNotice")
-            .classList.remove("hidden");
-        }
-
-        await loadSuppliers();
-
-        document.getElementById("supplierForm")
-          .addEventListener("submit", addSupplier);
-
-      } catch (error) {
-        console.error("Suppliers page error:", error);
-
-        document.getElementById("pageMessage").textContent =
-          "Unable to load suppliers: " + error.message;
-      }
-    });
-
-    async function loadSuppliers() {
-      const list = document.getElementById("suppliersList");
-      const message = document.getElementById("pageMessage");
-
-      list.innerHTML =
-        '<div style="padding:20px;" class="muted">Loading suppliers...</div>';
-
-      const { data: suppliers, error } = await db
-        .from("suppliers")
-        .select("id, name, created_at")
-        .order("name", { ascending: true });
-
-      if (error) throw error;
-
-      const { data: containers, error: containerError } = await db
-        .from("containers")
-        .select("supplier_id, status");
-
-      if (containerError) throw containerError;
-
-      const counts = {};
-
-      (containers || []).forEach(container => {
-        if (
-          container.supplier_id &&
-          container.status === "active"
-        ) {
-          counts[container.supplier_id] =
-            (counts[container.supplier_id] || 0) + 1;
-        }
-      });
-
-      document.getElementById("supplierCount").textContent =
-        (suppliers || []).length + " suppliers";
-
-      if (!suppliers || suppliers.length === 0) {
-        list.innerHTML =
-          '<div class="empty-state">' +
-          '<div class="empty-title">No suppliers found</div>' +
-          '<div class="empty-sub">Add your first supplier using the form above.</div>' +
-          '</div>';
-
-        message.textContent = "";
-        return;
-      }
-
-      list.innerHTML = "";
-
-      suppliers.forEach(supplier => {
-        const row = document.createElement("div");
-        row.className = "t-row supplier-grid";
-
-        const createdDate = supplier.created_at
-          ? new Date(supplier.created_at).toLocaleDateString()
-          : "—";
-
-        const values = [
-          supplier.name || "",
-          createdDate,
-          counts[supplier.id] || 0
-        ];
-
-        values.forEach((value, index) => {
-          const cell = document.createElement("div");
-          cell.textContent = value;
-
-          if (index === 0) {
-            cell.style.fontWeight = "600";
-          }
-
-          if (index === 2) {
-            cell.className = "mono";
-          }
-
-          row.appendChild(cell);
-        });
-
-        list.appendChild(row);
-      });
-
-      message.textContent = "";
-    }
-
-    async function addSupplier(event) {
-      event.preventDefault();
-
-      if (!Auth.isEditor()) {
-        alert("You do not have permission to add suppliers.");
-        return;
-      }
-
-      const button = document.getElementById("addSupplierBtn");
-      const name = document.getElementById("supplierName").value.trim();
-
-      if (!name) {
-        alert("Please enter a supplier name.");
-        return;
-      }
-
-      button.disabled = true;
-      button.textContent = "Saving...";
-
-      try {
-        const { error } = await db
-          .from("suppliers")
-          .insert([{ name: name }]);
-
-        if (error) throw error;
-
-        document.getElementById("supplierForm").reset();
-
-        alert("Supplier added successfully.");
-
-        await loadSuppliers();
-
-      } catch (error) {
-        console.error("Add supplier error:", error);
-        alert("Could not add supplier: " + error.message);
-
-      } finally {
-        button.disabled = false;
-        button.textContent = "+ Add Supplier";
-      }
-    }
-  </script>
-
-</body>
-</html>
+            .toUpper
