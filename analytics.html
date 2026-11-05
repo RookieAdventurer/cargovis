@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CargoVis — Analytics</title>
+
+  <link rel="stylesheet" href="css/styles.css">
+
+  <style>
+    .analytics-page {
+      padding: 24px;
+      max-width: 1500px;
+      margin: 0 auto;
+    }
+
+    .analytics-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-bottom: 24px;
+    }
+
+    .analytics-header h1 {
+      margin: 0 0 6px;
+      color: #1F3864;
+    }
+
+    .analytics-header p {
+      margin: 0;
+      color: #6b7280;
+    }
+
+    .analytics-refresh {
+      border: 0;
+      background: #1F3864;
+      color: white;
+      padding: 10px 16px;
+      border-radius: 7px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    .analytics-refresh:hover {
+      background: #0F1B35;
+    }
+
+    .analytics-updated {
+      color: #6b7280;
+      font-size: 12px;
+      margin-top: 8px;
+      text-align: right;
+    }
+
+    .analytics-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 16px;
+      margin-bottom: 22px;
+    }
+
+    .analytics-card,
+    .analytics-panel {
+      background: white;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 2px 8px rgba(15, 27, 53, 0.04);
+    }
+
+    .analytics-card {
+      position: relative;
+      overflow: hidden;
+    }
+
+    .analytics-card::after {
+      content: "";
+      position: absolute;
+      width: 5px;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      background: #1F3864;
+    }
+
+    .analytics-card.green::after {
+      background: #16a36a;
+    }
+
+    .analytics-card.orange::after {
+      background: #e69a25;
+    }
+
+    .analytics-card.red::after {
+      background: #d9534f;
+    }
+
+    .analytics-card-label {
+      color: #6b7280;
+      font-size: 13px;
+      margin-bottom: 10px;
+    }
+
+    .analytics-card-value {
+      font-size: 30px;
+      font-weight: 750;
+      color: #1F3864;
+      line-height: 1.2;
+    }
+
+    .analytics-card-note {
+      color: #8b929d;
+      font-size: 12px;
+      margin-top: 8px;
+    }
+
+    .analytics-section-title {
+      color: #1F3864;
+      font-size: 17px;
+      margin: 0 0 16px;
+    }
+
+    .analytics-panels {
+      display: grid;
+      grid-template-columns: 1.5fr 1fr;
+      gap: 18px;
+      margin-bottom: 20px;
+    }
+
+    .analytics-panels.equal {
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .chart-area {
+      min-height: 210px;
+    }
+
+    .bar-chart {
+      display: flex;
+      align-items: flex-end;
+      gap: 12px;
+      height: 180px;
+      padding: 12px 4px 0;
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    .bar-column {
+      flex: 1;
+      min-width: 0;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .bar-value {
+      color: #526078;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .bar-track {
+      width: min(100%, 42px);
+      height: 130px;
+      display: flex;
+      align-items: flex-end;
+      background: #f0f3f8;
+      border-radius: 6px 6px 0 0;
+      overflow: hidden;
+    }
+
+    .bar-fill {
+      width: 100%;
+      min-height: 2px;
+      background: linear-gradient(180deg, #5279b8, #1F3864);
+      border-radius: 6px 6px 0 0;
+      transition: height .3s ease;
+    }
+
+    .bar-label {
+      color: #6b7280;
+      font-size: 11px;
+      text-align: center;
+      white-space: nowrap;
+    }
+
+    .horizontal-list {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    .horizontal-item {
+      min-width: 0;
+    }
+
+    .horizontal-heading {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      font-size: 13px;
+      margin-bottom: 6px;
+      color: #374151;
+    }
+
+    .horizontal-heading span:first-child {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .horizontal-track {
+      height: 9px;
+      background: #edf0f5;
+      border-radius: 20px;
+      overflow: hidden;
+    }
+
+    .horizontal-fill {
+      height: 100%;
+      background: #2A4A7F;
+      border-radius: 20px;
+    }
+
+    .insights-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .insight-item {
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+      background: #f7f9fc;
+      border: 1px solid #e8edf5;
+      border-radius: 9px;
+      padding: 13px;
+      color: #374151;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .insight-icon {
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+
+    .analytics-table-wrap {
+      overflow-x: auto;
+    }
+
+    .analytics-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    .analytics-table th,
+    .analytics-table td {
+      text-align: left;
+      padding: 12px 10px;
+      border-bottom: 1px solid #edf0f4;
+      white-space: nowrap;
+    }
+
+    .analytics-table th {
+      color: #6b7280;
+      font-weight: 600;
+      background: #f8f9fb;
+    }
+
+    .eta-tag {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .eta-tag.overdue {
+      background: #fdeaea;
+      color: #b42318;
+    }
+
+    .eta-tag.soon {
+      background: #fff3dc;
+      color: #946200;
+    }
+
+    .eta-tag.normal {
+      background: #e9f5ee;
+      color: #187346;
+    }
+
+    .analytics-empty {
+      color: #8b929d;
+      text-align: center;
+      padding: 24px 10px;
+      font-size: 13px;
+    }
+
+    .analytics-message {
+      padding: 16px;
+      border-radius: 8px;
+      margin-bottom: 18px;
+      background: #f1f5fb;
+      color: #1F3864;
+      font-size: 13px;
+    }
+
+    .analytics-message.error {
+      background: #fdeaea;
+      color: #a52828;
+    }
+
+    @media (max-width: 1000px) {
+      .analytics-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .analytics-panels,
+      .analytics-panels.equal {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 600px) {
+      .analytics-page {
+        padding: 14px;
+      }
+
+      .analytics-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+
+      .analytics-card,
+      .analytics-panel {
+        padding: 14px;
+      }
+
+      .analytics-card-value {
+        font-size: 24px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <nav class="navbar">
+    <div class="navbar-brand">CargoVis</div>
+    <div id="analytics-user"></div>
+  </nav>
+
+  <aside class="sidebar">
+    <div class="sidebar-heading">WORKSPACE</div>
+
+    <a href="index.html" class="sidebar-link">Active Containers</a>
+    <a href="archive.html" class="sidebar-link">Archive</a>
+    <a href="suppliers.html" class="sidebar-link editor-only">Suppliers</a>
+    <a href="analytics.html" class="sidebar-link active">Analytics</a>
+
+    <div class="sidebar-divider"></div>
+    <div class="sidebar-heading">ACCOUNT</div>
+
+    <button class="sidebar-link" onclick="Auth.logout()">Logout</button>
+  </aside>
+
+  <main class="main-content">
+    <div class="analytics-page">
+
+      <div class="analytics-header">
+        <div>
+          <h1>Operations Analytics</h1>
+          <p>Your shipment activity, performance and operational overview.</p>
+        </div>
+
+        <div>
+          <button class="analytics-refresh" id="refresh-analytics">
+            ↻ Refresh Data
+          </button>
+          <div class="analytics-updated" id="analytics-updated">
+            Loading data...
+          </div>
+        </div>
+      </div>
+
+      <div id="analytics-message" class="analytics-message">
+        Loading your shipment analytics...
+      </div>
+
+      <section class="analytics-grid">
+        <div class="analytics-card">
+          <div class="analytics-card-label">Total Containers</div>
+          <div class="analytics-card-value" id="total-containers">—</div>
+          <div class="analytics-card-note">Active and archived combined</div>
+        </div>
+
+        <div class="analytics-card green">
+          <div class="analytics-card-label">Active Containers</div>
+          <div class="analytics-card-value" id="active-containers">—</div>
+          <div class="analytics-card-note">Currently in your active register</div>
+        </div>
+
+        <div class="analytics-card orange">
+          <div class="analytics-card-label">Archived Containers</div>
+          <div class="analytics-card-value" id="archived-containers">—</div>
+          <div class="analytics-card-note">Containers moved to archive</div>
+        </div>
+
+        <div class="analytics-card red">
+          <div class="analytics-card-label">ETAs Passed</div>
+          <div class="analytics-card-value" id="overdue-containers">—</div>
+          <div class="analytics-card-note">Arrival not recorded in active register</div>
+        </div>
+      </section>
+
+      <section class="analytics-panels">
+        <div class="analytics-panel">
+          <h2 class="analytics-section-title">Monthly Container Activity</h2>
+          <div id="monthly-chart" class="chart-area"></div>
+        </div>
+
+        <div class="analytics-panel">
+          <h2 class="analytics-section-title">Operational Snapshot</h2>
+          <div id="operational-insights" class="insights-list"></div>
+        </div>
+      </section>
+
+      <section class="analytics-panels equal">
+        <div class="analytics-panel">
+          <h2 class="analytics-section-title">Containers by Supplier</h2>
+          <div id="supplier-chart"></div>
+        </div>
+
+        <div class="analytics-panel">
+          <h2 class="analytics-section-title">Containers by Shipping Line</h2>
+          <div id="shipping-chart"></div>
+        </div>
+      </section>
+
+      <section class="analytics-panel" style="margin-bottom:20px;">
+        <h2 class="analytics-section-title">ETA Watchlist</h2>
+        <p style="font-size:12px;color:#8b929d;margin-top:-8px;">
+          Active containers with an ETA date. A passed ETA does not confirm that a shipment is delayed or has arrived.
+        </p>
+
+        <div class="analytics-table-wrap">
+          <table class="analytics-table">
+            <thead>
+              <tr>
+                <th>Container</th>
+                <th>Vessel</th>
+                <th>Supplier</th>
+                <th>Shipping Line</th>
+                <th>ETA</th>
+                <th>ETA Status</th>
+              </tr>
+            </thead>
+            <tbody id="eta-watchlist"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="analytics-panels equal">
+        <div class="analytics-panel">
+          <h2 class="analytics-section-title">Monthly Emptying Activity</h2>
+          <div id="emptying-chart" class="chart-area"></div>
+        </div>
+
+        <div class="analytics-panel">
+          <h2 class="analytics-section-title">Shipment Records</h2>
+          <div id="record-summary" class="insights-list"></div>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase-client.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/analytics.js"></script>
+
+</body>
+</html>
