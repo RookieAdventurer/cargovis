@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -7,191 +8,172 @@
 
   <link rel="stylesheet" href="css/styles.css">
 
-  <style>
-    .analytics-page {
-      padding: 24px;
-      max-width: 1500px;
-      margin: 0 auto;
-    }
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase-client.js"></script>
+  <script src="js/auth.js"></script>
 
+  <style>
     .analytics-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      gap: 16px;
       flex-wrap: wrap;
+      gap: 12px;
       margin-bottom: 24px;
     }
 
     .analytics-header h1 {
-      margin: 0 0 6px;
-      color: #1F3864;
+      margin: 0 0 5px;
     }
 
-    .analytics-header p {
-      margin: 0;
-      color: #6b7280;
-    }
-
-    .analytics-refresh {
-      border: 0;
-      background: #1F3864;
-      color: white;
-      padding: 10px 16px;
-      border-radius: 7px;
-      cursor: pointer;
-      font-weight: 600;
-    }
-
-    .analytics-refresh:hover {
-      background: #0F1B35;
+    .analytics-subtitle {
+      color: #718096;
+      font-size: 14px;
     }
 
     .analytics-updated {
-      color: #6b7280;
+      color: #718096;
       font-size: 12px;
       margin-top: 8px;
-      text-align: right;
     }
 
-    .analytics-grid {
+    .analytics-refresh {
+      background: #1F3864;
+      color: white;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 13px;
+    }
+
+    .analytics-refresh:disabled {
+      opacity: 0.6;
+      cursor: wait;
+    }
+
+    .analytics-message {
+      display: none;
+      padding: 13px 16px;
+      margin-bottom: 20px;
+      border-radius: 6px;
+      background: #edf2f7;
+      color: #334155;
+      font-size: 14px;
+    }
+
+    .analytics-message.error {
+      background: #fff0f0;
+      color: #b42318;
+    }
+
+    .analytics-kpis {
       display: grid;
       grid-template-columns: repeat(4, minmax(0, 1fr));
       gap: 16px;
-      margin-bottom: 22px;
+      margin-bottom: 24px;
     }
 
-    .analytics-card,
-    .analytics-panel {
+    .analytics-kpi {
       background: white;
-      border: 1px solid #e5e7eb;
-      border-radius: 12px;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
       padding: 20px;
-      box-shadow: 0 2px 8px rgba(15, 27, 53, 0.04);
     }
 
-    .analytics-card {
-      position: relative;
-      overflow: hidden;
-    }
-
-    .analytics-card::after {
-      content: "";
-      position: absolute;
-      width: 5px;
-      left: 0;
-      top: 0;
-      bottom: 0;
-      background: #1F3864;
-    }
-
-    .analytics-card.green::after {
-      background: #16a36a;
-    }
-
-    .analytics-card.orange::after {
-      background: #e69a25;
-    }
-
-    .analytics-card.red::after {
-      background: #d9534f;
-    }
-
-    .analytics-card-label {
-      color: #6b7280;
+    .analytics-kpi-label {
+      color: #718096;
       font-size: 13px;
       margin-bottom: 10px;
     }
 
-    .analytics-card-value {
-      font-size: 30px;
-      font-weight: 750;
+    .analytics-kpi-value {
       color: #1F3864;
-      line-height: 1.2;
+      font-size: 28px;
+      font-weight: 700;
     }
 
-    .analytics-card-note {
-      color: #8b929d;
-      font-size: 12px;
-      margin-top: 8px;
-    }
-
-    .analytics-section-title {
-      color: #1F3864;
-      font-size: 17px;
-      margin: 0 0 16px;
-    }
-
-    .analytics-panels {
+    .analytics-grid {
       display: grid;
-      grid-template-columns: 1.5fr 1fr;
-      gap: 18px;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 20px;
       margin-bottom: 20px;
     }
 
-    .analytics-panels.equal {
-      grid-template-columns: 1fr 1fr;
+    .analytics-panel {
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 20px;
+      min-width: 0;
     }
 
-    .chart-area {
-      min-height: 210px;
+    .analytics-panel h3 {
+      margin: 0 0 18px;
+      color: #1F3864;
+      font-size: 16px;
+    }
+
+    .analytics-empty {
+      color: #718096;
+      text-align: center;
+      padding: 24px 12px;
+      font-size: 13px;
     }
 
     .bar-chart {
       display: flex;
       align-items: flex-end;
+      justify-content: space-around;
       gap: 12px;
-      height: 180px;
-      padding: 12px 4px 0;
-      border-bottom: 1px solid #e5e7eb;
+      height: 190px;
+      padding-top: 15px;
     }
 
     .bar-column {
       flex: 1;
-      min-width: 0;
-      height: 100%;
       display: flex;
       flex-direction: column;
-      justify-content: flex-end;
       align-items: center;
-      gap: 7px;
+      justify-content: flex-end;
+      height: 100%;
+      min-width: 0;
     }
 
     .bar-value {
-      color: #526078;
-      font-size: 11px;
+      font-size: 12px;
       font-weight: 600;
+      color: #475569;
+      margin-bottom: 6px;
     }
 
     .bar-track {
-      width: min(100%, 42px);
-      height: 130px;
+      height: 125px;
+      width: 100%;
+      max-width: 42px;
+      background: #f1f5f9;
+      border-radius: 5px 5px 0 0;
       display: flex;
       align-items: flex-end;
-      background: #f0f3f8;
-      border-radius: 6px 6px 0 0;
       overflow: hidden;
     }
 
     .bar-fill {
       width: 100%;
-      min-height: 2px;
-      background: linear-gradient(180deg, #5279b8, #1F3864);
-      border-radius: 6px 6px 0 0;
-      transition: height .3s ease;
+      background: #2A4A7F;
+      border-radius: 5px 5px 0 0;
     }
 
     .bar-label {
-      color: #6b7280;
       font-size: 11px;
-      text-align: center;
-      white-space: nowrap;
+      color: #718096;
+      margin-top: 8px;
     }
 
     .horizontal-list {
       display: flex;
       flex-direction: column;
-      gap: 15px;
+      gap: 16px;
     }
 
     .horizontal-item {
@@ -201,55 +183,53 @@
     .horizontal-heading {
       display: flex;
       justify-content: space-between;
-      gap: 10px;
+      gap: 12px;
       font-size: 13px;
       margin-bottom: 6px;
-      color: #374151;
+      color: #475569;
     }
 
-    .horizontal-heading span:first-child {
+    .horizontal-heading span {
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
     }
 
     .horizontal-track {
-      height: 9px;
-      background: #edf0f5;
-      border-radius: 20px;
+      height: 8px;
+      background: #edf2f7;
+      border-radius: 10px;
       overflow: hidden;
     }
 
     .horizontal-fill {
       height: 100%;
       background: #2A4A7F;
-      border-radius: 20px;
+      border-radius: 10px;
     }
 
-    .insights-list {
-      display: grid;
-      gap: 10px;
+    .insight-list {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
     }
 
     .insight-item {
       display: flex;
-      gap: 12px;
       align-items: flex-start;
-      background: #f7f9fc;
-      border: 1px solid #e8edf5;
-      border-radius: 9px;
-      padding: 13px;
-      color: #374151;
+      gap: 12px;
+      color: #475569;
       font-size: 13px;
-      line-height: 1.5;
+      line-height: 1.6;
     }
 
     .insight-icon {
-      font-size: 18px;
+      font-size: 19px;
       flex-shrink: 0;
     }
 
     .analytics-table-wrap {
+      width: 100%;
       overflow-x: auto;
     }
 
@@ -257,20 +237,20 @@
       width: 100%;
       border-collapse: collapse;
       font-size: 13px;
+      min-width: 650px;
     }
 
     .analytics-table th,
     .analytics-table td {
       text-align: left;
       padding: 12px 10px;
-      border-bottom: 1px solid #edf0f4;
-      white-space: nowrap;
+      border-bottom: 1px solid #edf2f7;
     }
 
     .analytics-table th {
-      color: #6b7280;
+      color: #718096;
       font-weight: 600;
-      background: #f8f9fb;
+      background: #f8fafc;
     }
 
     .eta-tag {
@@ -278,73 +258,45 @@
       padding: 4px 8px;
       border-radius: 20px;
       font-size: 11px;
-      font-weight: 600;
+      white-space: nowrap;
     }
 
     .eta-tag.overdue {
-      background: #fdeaea;
+      background: #fee2e2;
       color: #b42318;
     }
 
     .eta-tag.soon {
-      background: #fff3dc;
-      color: #946200;
+      background: #fef3c7;
+      color: #92400e;
     }
 
     .eta-tag.normal {
-      background: #e9f5ee;
-      color: #187346;
+      background: #e2e8f0;
+      color: #475569;
     }
 
-    .analytics-empty {
-      color: #8b929d;
-      text-align: center;
-      padding: 24px 10px;
-      font-size: 13px;
-    }
-
-    .analytics-message {
-      padding: 16px;
-      border-radius: 8px;
-      margin-bottom: 18px;
-      background: #f1f5fb;
-      color: #1F3864;
-      font-size: 13px;
-    }
-
-    .analytics-message.error {
-      background: #fdeaea;
-      color: #a52828;
-    }
-
-    @media (max-width: 1000px) {
-      .analytics-grid {
+    @media (max-width: 900px) {
+      .analytics-kpis {
         grid-template-columns: repeat(2, minmax(0, 1fr));
-      }
-
-      .analytics-panels,
-      .analytics-panels.equal {
-        grid-template-columns: 1fr;
       }
     }
 
     @media (max-width: 600px) {
-      .analytics-page {
-        padding: 14px;
+      .analytics-grid {
+        grid-template-columns: 1fr;
       }
 
-      .analytics-grid {
-        grid-template-columns: 1fr 1fr;
+      .analytics-kpis {
         gap: 10px;
       }
 
-      .analytics-card,
-      .analytics-panel {
+      .analytics-kpi {
         padding: 14px;
       }
 
-      .analytics-card-value {
-        font-size: 24px;
+      .analytics-kpi-value {
+        font-size: 23px;
       }
     }
   </style>
@@ -352,140 +304,244 @@
 
 <body>
 
-  <nav class="navbar">
-    <div class="navbar-brand">CargoVis</div>
-    <div id="analytics-user"></div>
-  </nav>
+  <div class="navbar">
+    <div class="nav-left">
+      <span class="nav-icon">📦</span>
+      <span class="nav-title">CargoVis</span>
+    </div>
 
-  <aside class="sidebar">
-    <div class="sidebar-heading">WORKSPACE</div>
+    <div class="nav-right">
+      <span class="nav-date" id="nav-date"></span>
+      <div class="avatar" id="avatar">CV</div>
+    </div>
+  </div>
 
-    <a href="index.html" class="sidebar-link">Active Containers</a>
-    <a href="archive.html" class="sidebar-link">Archive</a>
-    <a href="suppliers.html" class="sidebar-link editor-only">Suppliers</a>
-    <a href="analytics.html" class="sidebar-link active">Analytics</a>
+  <div class="app-layout">
 
-    <div class="sidebar-divider"></div>
-    <div class="sidebar-heading">ACCOUNT</div>
+    <aside class="sidebar">
 
-    <button class="sidebar-link" onclick="Auth.logout()">Logout</button>
-  </aside>
+      <div class="sidebar-heading">WORKSPACE</div>
 
-  <main class="main-content" style="margin-left:240px; padding-top:70px;">
-    <div class="analytics-page">
+      <a href="index.html" class="sidebar-link">
+        <span class="sidebar-symbol">▦</span> Active
+      </a>
 
-      <div class="analytics-header">
-        <div>
-          <h1>Operations Analytics</h1>
-          <p>Your shipment activity, performance and operational overview.</p>
-        </div>
+      <a href="archive.html" class="sidebar-link">
+        <span class="sidebar-symbol">▤</span> Archive
+      </a>
 
-        <div>
-          <button class="analytics-refresh" id="refresh-analytics">
+      <a href="suppliers.html" class="sidebar-link editor-only">
+        <span class="sidebar-symbol">♧</span> Suppliers
+      </a>
+
+      <a href="analytics.html" class="sidebar-link active">
+        <span class="sidebar-symbol">▥</span> Analytics
+      </a>
+
+      <div class="sidebar-divider"></div>
+
+      <div class="sidebar-heading">ACCOUNT</div>
+
+      <a href="#" class="sidebar-link" id="logout-link">
+        <span class="sidebar-symbol">↪</span> Logout
+      </a>
+
+    </aside>
+
+    <main class="main-content">
+
+      <div class="page-body">
+
+        <div class="analytics-header">
+          <div>
+            <h1>Analytics</h1>
+            <div class="analytics-subtitle">
+              Container activity and shipment performance overview
+            </div>
+            <div class="analytics-updated" id="analytics-updated"></div>
+          </div>
+
+          <button
+            type="button"
+            class="analytics-refresh"
+            id="refresh-analytics">
             ↻ Refresh Data
           </button>
-          <div class="analytics-updated" id="analytics-updated">
-            Loading data...
+        </div>
+
+        <div class="analytics-message" id="analytics-message">
+          Loading shipment analytics...
+        </div>
+
+        <!-- Key performance indicators -->
+        <div class="analytics-kpis">
+
+          <div class="analytics-kpi">
+            <div class="analytics-kpi-label">Total Records</div>
+            <div class="analytics-kpi-value" id="total-containers">0</div>
           </div>
+
+          <div class="analytics-kpi">
+            <div class="analytics-kpi-label">Active Containers</div>
+            <div class="analytics-kpi-value" id="active-containers">0</div>
+          </div>
+
+          <div class="analytics-kpi">
+            <div class="analytics-kpi-label">Archived Containers</div>
+            <div class="analytics-kpi-value" id="archived-containers">0</div>
+          </div>
+
+          <div class="analytics-kpi">
+            <div class="analytics-kpi-label">Overdue ETAs</div>
+            <div class="analytics-kpi-value" id="overdue-containers">0</div>
+          </div>
+
         </div>
+
+        <!-- Monthly charts -->
+        <div class="analytics-grid">
+
+          <section class="analytics-panel">
+            <h3>Monthly Container Activity</h3>
+            <div id="monthly-chart">
+              <div class="analytics-empty">Loading chart...</div>
+            </div>
+          </section>
+
+          <section class="analytics-panel">
+            <h3>Monthly Emptying Activity</h3>
+            <div id="emptying-chart">
+              <div class="analytics-empty">Loading chart...</div>
+            </div>
+          </section>
+
+        </div>
+
+        <!-- Supplier and shipping line breakdown -->
+        <div class="analytics-grid">
+
+          <section class="analytics-panel">
+            <h3>Containers by Supplier</h3>
+            <div id="supplier-chart">
+              <div class="analytics-empty">Loading supplier data...</div>
+            </div>
+          </section>
+
+          <section class="analytics-panel">
+            <h3>Containers by Shipping Line</h3>
+            <div id="shipping-chart">
+              <div class="analytics-empty">Loading shipping-line data...</div>
+            </div>
+          </section>
+
+        </div>
+
+        <!-- Operational insights -->
+        <div class="analytics-grid">
+
+          <section class="analytics-panel">
+            <h3>Operational Snapshot</h3>
+            <div class="insight-list" id="operational-insights">
+              <div class="analytics-empty">Loading insights...</div>
+            </div>
+          </section>
+
+          <section class="analytics-panel">
+            <h3>Shipment Records</h3>
+            <div class="insight-list" id="record-summary">
+              <div class="analytics-empty">Loading record summary...</div>
+            </div>
+          </section>
+
+        </div>
+
+        <!-- ETA watchlist -->
+        <section class="analytics-panel">
+          <h3>ETA Watchlist — Active Containers</h3>
+
+          <div class="analytics-table-wrap">
+            <table class="analytics-table">
+              <thead>
+                <tr>
+                  <th>Container</th>
+                  <th>Vessel</th>
+                  <th>Supplier</th>
+                  <th>Shipping Line</th>
+                  <th>ETA</th>
+                  <th>ETA Status</th>
+                </tr>
+              </thead>
+
+              <tbody id="eta-watchlist">
+                <tr>
+                  <td colspan="6" class="analytics-empty">
+                    Loading ETA information...
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
       </div>
+    </main>
+  </div>
 
-      <div id="analytics-message" class="analytics-message">
-        Loading your shipment analytics...
-      </div>
-
-      <section class="analytics-grid">
-        <div class="analytics-card">
-          <div class="analytics-card-label">Total Containers</div>
-          <div class="analytics-card-value" id="total-containers">—</div>
-          <div class="analytics-card-note">Active and archived combined</div>
-        </div>
-
-        <div class="analytics-card green">
-          <div class="analytics-card-label">Active Containers</div>
-          <div class="analytics-card-value" id="active-containers">—</div>
-          <div class="analytics-card-note">Currently in your active register</div>
-        </div>
-
-        <div class="analytics-card orange">
-          <div class="analytics-card-label">Archived Containers</div>
-          <div class="analytics-card-value" id="archived-containers">—</div>
-          <div class="analytics-card-note">Containers moved to archive</div>
-        </div>
-
-        <div class="analytics-card red">
-          <div class="analytics-card-label">ETAs Passed</div>
-          <div class="analytics-card-value" id="overdue-containers">—</div>
-          <div class="analytics-card-note">Arrival not recorded in active register</div>
-        </div>
-      </section>
-
-      <section class="analytics-panels">
-        <div class="analytics-panel">
-          <h2 class="analytics-section-title">Monthly Container Activity</h2>
-          <div id="monthly-chart" class="chart-area"></div>
-        </div>
-
-        <div class="analytics-panel">
-          <h2 class="analytics-section-title">Operational Snapshot</h2>
-          <div id="operational-insights" class="insights-list"></div>
-        </div>
-      </section>
-
-      <section class="analytics-panels equal">
-        <div class="analytics-panel">
-          <h2 class="analytics-section-title">Containers by Supplier</h2>
-          <div id="supplier-chart"></div>
-        </div>
-
-        <div class="analytics-panel">
-          <h2 class="analytics-section-title">Containers by Shipping Line</h2>
-          <div id="shipping-chart"></div>
-        </div>
-      </section>
-
-      <section class="analytics-panel" style="margin-bottom:20px;">
-        <h2 class="analytics-section-title">ETA Watchlist</h2>
-        <p style="font-size:12px;color:#8b929d;margin-top:-8px;">
-          Active containers with an ETA date. A passed ETA does not confirm that a shipment is delayed or has arrived.
-        </p>
-
-        <div class="analytics-table-wrap">
-          <table class="analytics-table">
-            <thead>
-              <tr>
-                <th>Container</th>
-                <th>Vessel</th>
-                <th>Supplier</th>
-                <th>Shipping Line</th>
-                <th>ETA</th>
-                <th>ETA Status</th>
-              </tr>
-            </thead>
-            <tbody id="eta-watchlist"></tbody>
-          </table>
-        </div>
-      </section>
-
-      <section class="analytics-panels equal">
-        <div class="analytics-panel">
-          <h2 class="analytics-section-title">Monthly Emptying Activity</h2>
-          <div id="emptying-chart" class="chart-area"></div>
-        </div>
-
-        <div class="analytics-panel">
-          <h2 class="analytics-section-title">Shipment Records</h2>
-          <div id="record-summary" class="insights-list"></div>
-        </div>
-      </section>
-
-    </div>
-  </main>
-
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="js/supabase-client.js"></script>
-  <script src="js/auth.js"></script>
   <script src="js/analytics.js"></script>
+
+  <script>
+    // Display current date
+    const navDate = document.getElementById("nav-date");
+
+    if (navDate) {
+      navDate.textContent = new Date().toLocaleDateString(undefined, {
+        weekday: "short",
+        day: "2-digit",
+        month: "short",
+        year: "numeric"
+      });
+    }
+
+    // Display account initials and protect the page
+    document.addEventListener("DOMContentLoaded", async () => {
+      try {
+        const session = await Auth.restoreSession();
+
+        if (!session || !session.success) {
+          window.location.href = "login.html";
+          return;
+        }
+
+        const profile = session.profile;
+
+        document.body.classList.toggle(
+          "viewer",
+          profile.role === "viewer"
+        );
+
+        Auth.applyRoleVisibility();
+
+        const avatar = document.getElementById("avatar");
+
+        if (avatar && profile.username) {
+          avatar.textContent = profile.username
+            .substring(0, 2)
+            .toUpperCase();
+        }
+
+        document
+          .getElementById("logout-link")
+          .addEventListener("click", async event => {
+            event.preventDefault();
+            await Auth.logout();
+          });
+
+      } catch (error) {
+        console.error("Analytics session error:", error);
+        window.location.href = "login.html";
+      }
+    });
+  </script>
 
 </body>
 </html>
