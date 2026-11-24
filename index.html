@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -6,7 +7,9 @@
 <title>CargoVis — Active</title>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.4/jspdf.plugin.autotable.min.js"></script>
 <script src="js/supabase-client.js"></script>
 <script src="js/auth.js"></script>
 
@@ -496,507 +499,7 @@ function populateSupplierFilter() {
     sel.appendChild(o);
   });
 }
-
-async function updateStats() {
-  const total = allContainers.length;
-  const arrived = allContainers.filter(c => c.status === "ARRIVED").length;
-
-  document.getElementById("statActive").textContent = total;
-  document.getElementById("statActiveSub").textContent =
-    `across ${allSuppliers.length} suppliers`;
-
-  document.getElementById("statArrived").textContent = arrived;
-  document.getElementById("statNotArrived").textContent = total - arrived;
-
-  try {
-    const archived = await fetchArchived();
-    document.getElementById("statArchived").textContent = archived.length;
-  } catch (error) {
-    console.error("Could not load archive count:", error);
-  }
-}
-
-function getFiltered() {
-  const q = (document.getElementById("searchInput")?.value || "").toLowerCase();
-  const sup = document.getElementById("filterSupplier")?.value || "";
-  const sta = document.getElementById("filterStatus")?.value || "";
-
-  return allContainers.filter(c => {
-    if (q && !`${c.container_number} ${c.vessel || ""} ${c.suppliers?.name || ""}`.toLowerCase().includes(q)) {
-      return false;
-    }
-
-    if (sup && c.supplier_id !== sup) return false;
-    if (sta && c.status !== sta) return false;
-
-    return true;
-  });
-}
-
-function renderTable() {
-  const el = document.getElementById("contentArea");
-  if (!el) return;
-
-  const filtered = getFiltered();
-
-  if (!filtered.length) {
-    el.innerHTML = emptyHTML();
-    Auth.applyRoleVisibility();
-    return;
-  }
-
-  el.innerHTML = currentView === "timeline"
-    ? timelineHTML(filtered)
-    : supplierHTML(filtered);
-
-  Auth.applyRoleVisibility();
-}
-
-// --------------------------------------------------
-// ORIGINAL EMPTY-STATE ILLUSTRATION — PRESERVED
-// --------------------------------------------------
-
-function emptyHTML(){return`<div class="empty-state"><div class="empty-illustration"><svg width="180" height="110" viewBox="0 0 180 110" fill="none"><rect x="10" y="72" width="160" height="32" rx="4" fill="#1F3864" stroke="#2A5A9F" stroke-width="1.2"/><rect x="14" y="75" width="46" height="26" rx="2" fill="#E53E3E"/><rect x="64" y="75" width="46" height="26" rx="2" fill="#D69E2E"/><rect x="114" y="75" width="52" height="26" rx="2" fill="#276749"/><rect x="22" y="38" width="136" height="36" rx="4" fill="#162D50" stroke="#2A5A9F" stroke-width="1.2"/><rect x="26" y="41" width="40" height="30" rx="2" fill="#3182CE"/><rect x="70" y="41" width="40" height="30" rx="2" fill="#E53E3E"/><rect x="114" y="41" width="40" height="30" rx="2" fill="#D69E2E"/><rect x="40" y="10" width="100" height="30" rx="4" fill="#1A3A6B" stroke="#2A5A9F" stroke-width="1.2"/><rect x="44" y="13" width="28" height="24" rx="2" fill="#276749"/><rect x="76" y="13" width="28" height="24" rx="2" fill="#E53E3E"/><rect x="108" y="13" width="28" height="24" rx="2" fill="#3182CE"/></svg></div><div class="empty-shadow"></div><div class="empty-title">No containers found</div><div class="empty-sub">Paste your container numbers and we'll fetch everything automatically</div><button class="btn btn-primary editor-only" onclick="openAddModal()" style="margin-top:6px">+ Add your first container</button></div>`;}
-
-// --------------------------------------------------
-// SUPPLIER VIEW
-// --------------------------------------------------
-
-function supplierHTML(containers) {
-  const grouped = {};
-
-  containers.forEach(c => {
-    const name = c.suppliers?.name || "Unassigned";
-    if (!grouped[name]) grouped[name] = [];
-    grouped[name].push(c);
-  });
-
-  let html = '<div class="table-wrap">';
-
-  Object.entries(grouped).forEach(([name, rows], i) => {
-    html += `<div class="section-header" ${i > 0 ? 'style="border-top:0.5px solid var(--grey-border)"' : ''}>
-      <span class="section-name">${name.toUpperCase()}</span>
-      <span class="section-count">${rows.length} container${rows.length !== 1 ? "s" : ""}</span>
-    </div>
-    <div class="t-head" style="grid-template-columns:1.4fr 1.5fr 1.9fr 0.9fr 0.85fr 0.9fr">
-      <div class="th">Container no.</div>
-      <div class="th">Vessel</div>
-      <div class="th">ETA</div>
-      <div class="th">Line</div>
-      <div class="th">Status</div>
-      <div class="th">Packing list</div>
-    </div>`;
-
-    rows.forEach(c => {
-      html += rowHTML(c) + detailHTML(c);
-    });
-  });
-
-  html += "</div>";
-  return html;
-}
-
-// --------------------------------------------------
-// TIMELINE VIEW
-// --------------------------------------------------
-
-function timelineHTML(containers) {
-  const today = new Date();
-  today.setHours(0,0,0,0);
-
-  const in7 = new Date(today);
-  in7.setDate(today.getDate() + 7);
-
-  const endM = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-
-  const buckets = {
-    overdue:{label:"ETA passed / Arrival recorded",items:[],color:"#DC2626"},
-    thisWeek:{label:"This week",items:[],color:"#D69E2E"},
-    thisMonth:{label:"This month",items:[],color:"#93C5FD"},
-    later:{label:"Next month and beyond",items:[],color:"#9CA3AF"}
-  };
-
-  containers.forEach(c => {
-    if (!c.eta) {
-      buckets.later.items.push({...c,daysAway:999});
-      return;
-    }
-
-    const eta = new Date(c.eta);
-    eta.setHours(0,0,0,0);
-
-    const days = Math.round((eta - today) / 86400000);
-
-    const key = eta <= today
-      ? "overdue"
-      : eta <= in7
-        ? "thisWeek"
-        : eta <= endM
-          ? "thisMonth"
-          : "later";
-
-    buckets[key].items.push({...c,daysAway:days});
-  });
-
-  let html = "";
-
-  Object.entries(buckets).forEach(([key,b]) => {
-    if (!b.items.length) return;
-
-    const chip = key === "overdue" ? "overdue"
-      : key === "thisWeek" ? "soon"
-      : key === "thisMonth" ? "later" : "far";
-
-    html += `<div class="bucket">
-      <div class="bucket-header">
-        <span class="bucket-dot" style="background:${b.color}"></span>
-        <span class="bucket-title">${b.label}</span>
-        <span class="bucket-count">${b.items.length} container${b.items.length !== 1 ? "s" : ""}</span>
-      </div>
-      <div class="table-wrap">
-        <div class="t-head" style="grid-template-columns:1.3fr 1.3fr 1.6fr 0.8fr 0.8fr 1fr">
-          <div class="th">Container no.</div>
-          <div class="th">Vessel</div>
-          <div class="th">ETA</div>
-          <div class="th">Supplier</div>
-          <div class="th">Line</div>
-          <div class="th">Countdown</div>
-        </div>`;
-
-    b.items.forEach(c => {
-      const label = c.daysAway === 999 ? "ETA not set"
-        : c.daysAway === 0 ? "ETA today"
-        : c.daysAway === 1 ? "ETA tomorrow"
-        : c.daysAway > 1 ? `ETA in ${c.daysAway} days`
-        : c.daysAway === -1 ? "ETA was yesterday"
-        : `ETA was ${Math.abs(c.daysAway)} days ago`;
-
-      html += `<div class="t-row" style="grid-template-columns:1.3fr 1.3fr 1.6fr 0.8fr 0.8fr 1fr" onclick="toggleDetail('${c.id}')">
-        <div class="mono">${c.container_number}</div>
-        <div class="muted">${c.vessel || "—"}</div>
-        <div class="muted">${fmtDate(c.eta)}</div>
-        <div class="muted">${c.suppliers?.name || "—"}</div>
-        <div class="muted">${c.shipping_line || "—"}</div>
-        <div><span class="countdown-chip ${chip}">${label}</span></div>
-      </div>` + detailHTML(c);
-    });
-
-    html += "</div></div>";
-  });
-
-  return html || emptyHTML();
-}
-
-// --------------------------------------------------
-// CONTAINER ROWS AND DETAILS
-// --------------------------------------------------
-
-function rowHTML(c) {
-  const arrived = c.status === "ARRIVED";
-  const sc = arrived ? "arrived" : "pending";
-  const ic = arrived ? "#059669" : "#DC2626";
-
-  const pl = c.packing_list_url
-    ? `<span class="pl-btn" onclick="event.stopPropagation();viewPL('${c.id}')">📄 View / Download</span>`
-    : `<span class="pl-missing">No file yet</span>`;
-
-  return `<div class="t-row" style="grid-template-columns:1.4fr 1.5fr 1.9fr 0.9fr 0.85fr 0.9fr" onclick="toggleDetail('${c.id}')">
-    <div class="mono">${c.container_number}</div>
-    <div class="muted">${c.vessel || "—"}</div>
-    <div class="muted">${fmtDate(c.eta)}</div>
-    <div class="muted">${c.shipping_line || "—"}</div>
-    <div><span class="badge ${sc}"><span class="ind" style="background:${ic}"></span>${arrived ? "Arrived" : "Not arrived"}</span></div>
-    <div>${pl}</div>
-  </div>`;
-}
-
-function detailHTML(c) {
-  if (c.id !== activeDetailId) return "";
-
-  const pl = c.packing_list_url
-    ? `<div class="pl-file-row">
-        <div style="width:28px;height:28px;background:#DBEAFE;border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1D4ED8" stroke-width="2">
-            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-            <polyline points="14 2 14 8 20 8"/>
-          </svg>
-        </div>
-        <div style="flex:1">
-          <div class="pl-file-name">${c.packing_list_filename || "Packing list"}</div>
-        </div>
-        <div style="display:flex;gap:6px">
-          <button class="pl-action-btn" onclick="viewPL('${c.id}')">View</button>
-          <button class="pl-action-btn" onclick="viewPL('${c.id}',true)">↓</button>
-          <button class="pl-action-btn editor-only" onclick="document.getElementById('pu_${c.id}').click()">Replace</button>
-        </div>
-      </div>
-      <input type="file" id="pu_${c.id}" onchange="uploadPL(event,'${c.id}')">`
-    : `<div class="pl-upload-area editor-only" onclick="document.getElementById('pu_${c.id}').click()">Click to upload packing list (PDF, Word, or Excel)</div>
-      <input type="file" id="pu_${c.id}" onchange="uploadPL(event,'${c.id}')">
-      <p style="font-size:10px;color:#D1D5DB;font-style:italic;margin-top:8px">No packing list uploaded yet</p>`;
-
-  return `<div class="detail-panel open">
-    <div>
-      <div class="detail-section-title">Shipment info</div>
-      <div class="detail-card">
-        <div class="detail-row"><span class="detail-key">Container</span><span class="detail-val mono">${c.container_number}</span></div>
-        <div class="detail-row"><span class="detail-key">Vessel</span><span class="detail-val">${c.vessel || "—"}</span></div>
-        <div class="detail-row"><span class="detail-key">ETA</span><span class="detail-val">${fmtDate(c.eta)}</span></div>
-        <div class="detail-row"><span class="detail-key">Shipping line</span><span class="detail-val">${c.shipping_line || "—"}</span></div>
-        <div class="detail-row"><span class="detail-key">Supplier</span><span class="detail-val">${c.suppliers?.name || "—"}</span></div>
-        <div class="detail-row"><span class="detail-key">Recipient</span><span class="detail-val">${c.recipient || "WAGYINGO"}</span></div>
-        <div class="detail-row"><span class="detail-key">Status</span><span class="detail-val" style="color:${c.status === "ARRIVED" ? "#065F46" : "#991B1B"}">${c.status === "ARRIVED" ? "Arrived" : "Not arrived"}</span></div>
-      </div>
-
-      <div class="editor-only" style="display:flex;gap:8px;margin-top:10px">
-        <button class="btn" onclick="openEditModal('${c.id}')">Edit</button>
-        <button class="btn" style="color:#1D4ED8;border-color:#BFDBFE" onclick="doMarkEmptied('${c.id}')">Mark emptied</button>
-        <button class="btn admin-only" style="color:#991B1B;border-color:#F7C1C1" onclick="doDelete('${c.id}')">Remove</button>
-      </div>
-    </div>
-
-    <div>
-      <div class="detail-section-title">Packing list</div>
-      <div class="detail-card">${pl}</div>
-    </div>
-  </div>`;
-}
-
-function toggleDetail(id) {
-  activeDetailId = activeDetailId === id ? null : id;
-  renderTable();
-}
-
-// --------------------------------------------------
-// PACKING LIST
-// --------------------------------------------------
-
-async function viewPL(id, download) {
-  const c = allContainers.find(x => x.id === id);
-  if (!c?.packing_list_url) return;
-
-  const w = download ? null : window.open("", "_blank");
-
-  const options = download
-    ? {download:c.packing_list_filename || true}
-    : undefined;
-
-  const {data,error} = await db.storage
-    .from("packing-lists")
-    .createSignedUrl(c.packing_list_url, 300, options);
-
-  if (error) {
-    if (w) w.close();
-    alert("Could not open file: " + error.message);
-    return;
-  }
-
-  if (download) {
-    location.href = data.signedUrl;
-  } else if (w) {
-    w.location.href = data.signedUrl;
-  }
-}
-
-async function uploadPL(event, id) {
-  const file = event.target.files[0];
-  if (!file) return;
-
-  showLoading("Uploading packing list...", file.name);
-
-  const path = `${id}/${Date.now()}_${file.name.replace(/[^\w.\-]+/g,"_")}`;
-
-  const {error} = await db.storage
-    .from("packing-lists")
-    .upload(path, file);
-
-  if (error) {
-    hideLoading();
-    alert("Upload failed: " + error.message);
-    return;
-  }
-
-  const result = await updateContainerDB(id, {
-    packing_list_url:path,
-    packing_list_filename:file.name
-  });
-
-  hideLoading();
-
-  if (!result.success) {
-    alert("Error: " + result.message);
-    return;
-  }
-
-  allContainers = await fetchContainers();
-  renderTable();
-}
-
-// --------------------------------------------------
-// ADD CONTAINERS
-// --------------------------------------------------
-
-async function openAddModal() {
-  if (!Auth.isEditor()) return;
-
-  if (!allSuppliers.length) {
-    allSuppliers = await fetchSuppliers();
-  }
-
-  const opts = buildSupplierOptions(
-    allSuppliers.length ? allSuppliers[0].id : ""
-  );
-
-  document.getElementById("modalRoot").innerHTML = `
-    <div class="modal-overlay" onclick="closeOverlay(event)">
-      <div class="modal" onclick="event.stopPropagation()">
-        <div class="modal-title">Add containers</div>
-        <div class="modal-sub">Paste container numbers — one per line. We'll detect the shipping line automatically. You can assign suppliers and recipients individually in the next step.</div>
-
-        <div class="form-row">
-          <label class="form-label">Container numbers</label>
-          <textarea class="form-textarea" id="pasteInput" placeholder="MRKU3877867&#10;MRKU5521221&#10;TRHU5206816"></textarea>
-        </div>
-
-        <div class="form-grid">
-          <div class="form-row">
-            <label class="form-label">Default supplier</label>
-            <select class="form-select" id="supplierSel">${opts}</select>
-          </div>
-          <div class="form-row">
-            <label class="form-label">Default recipient</label>
-            <input
-              class="form-input"
-              id="recipientSel"
-              list="recipientOptions"
-              value="WAGYINGO"
-              placeholder="Enter recipient name"
-            >
-            ${recipientSuggestions()}
-          </div>
-        </div>
-
-        <div class="modal-footer">
-          <button class="btn" onclick="closeModal()">Cancel</button>
-          <button class="btn btn-primary" onclick="runLookup()">Look up containers →</button>
-        </div>
-      </div>
-    </div>`;
-}
-
-async function runLookup() {
-  if (!Auth.isEditor()) return;
-
-  const raw = document.getElementById("pasteInput").value;
-  const numbers = raw.split(/[\n,]+/)
-    .map(s => s.trim().toUpperCase())
-    .filter(s => s.length > 0);
-
-  if (!numbers.length) {
-    alert("Please paste at least one container number.");
-    return;
-  }
-
-  const supplierId = document.getElementById("supplierSel").value;
-  const recipient = document.getElementById("recipientSel").value.trim();
-
-  pendingRows = numbers.map(n => ({
-    container_number:n,
-    vessel:"",
-    eta:"",
-    shipping_line:detectLine(n),
-    supplier_id:supplierId,
-    recipient:recipient || "WAGYINGO"
-  }));
-
-  renderReviewModal();
-}
-
-function renderReviewModal() {
-  const rowsHTML = pendingRows.map((r,i) => `
-    <div style="display:grid;grid-template-columns:1.05fr 1.35fr 1.15fr 1.2fr 1.1fr 0.9fr;gap:6px;padding:9px 12px;border-bottom:0.5px solid var(--grey-border);align-items:center;min-width:1050px">
-
-      <div class="mono" style="font-size:11px">${escapeHTML(r.container_number)}</div>
-
-      <select
-        class="form-input"
-        style="height:32px;font-size:11px;min-width:0"
-        onchange="pendingRows[${i}].supplier_id=this.value"
-      >
-        ${buildSupplierOptions(r.supplier_id)}
-      </select>
-
-      <input
-        class="form-input"
-        style="height:32px;font-size:11px;min-width:0"
-        list="recipientOptions"
-        value="${escapeHTML(r.recipient)}"
-        placeholder="Recipient"
-        oninput="pendingRows[${i}].recipient=this.value"
-      >
-
-      <input
-        class="form-input"
-        style="height:32px;font-size:11px;min-width:0"
-        value="${escapeHTML(r.vessel)}"
-        onchange="pendingRows[${i}].vessel=this.value"
-        placeholder="Vessel name"
-      >
-
-      <input
-        type="date"
-        class="form-input"
-        style="height:32px;font-size:11px;min-width:0"
-        value="${escapeHTML(r.eta)}"
-        onchange="pendingRows[${i}].eta=this.value"
-      >
-
-      <select
-        class="form-input"
-        style="height:32px;font-size:11px;min-width:0"
-        onchange="pendingRows[${i}].shipping_line=this.value"
-      >
-        ${["MAERSK","HAPAG","CMA CGM","MSC","UNKNOWN"].map(l =>
-          `<option ${r.shipping_line === l ? "selected" : ""}>${l}</option>`
-        ).join("")}
-      </select>
-    </div>`).join("");
-
-  document.getElementById("modalRoot").innerHTML = `
-    <div class="modal-overlay" onclick="closeOverlay(event)">
-      <div class="modal" style="max-width:1100px;width:95%" onclick="event.stopPropagation()">
-
-        <div class="modal-title">Review & confirm</div>
-        <div class="modal-sub">${pendingRows.length} containers ready. Choose a supplier and recipient for each container, then enter vessel and ETA details.</div>
-
-        ${recipientSuggestions()}
-
-        <div style="background:var(--bg-subtle);border:0.5px solid var(--grey-border);border-radius:10px;overflow-x:auto;margin-bottom:8px">
-
-          <div style="display:grid;grid-template-columns:1.05fr 1.35fr 1.15fr 1.2fr 1.1fr 0.9fr;gap:6px;padding:8px 12px;border-bottom:0.5px solid var(--grey-border);background:#fff;min-width:1050px">
-            <div class="th">Container</div>
-            <div class="th">Supplier *</div>
-            <div class="th">Recipient</div>
-            <div class="th">Vessel</div>
-            <div class="th">ETA *</div>
-            <div class="th">Line</div>
-          </div>
-
-          ${rowsHTML}
-        </div>
-
-        <div class="modal-footer">
-          <button class="btn" onclick="openAddModal()">Back</button>
-          <button class="btn btn-primary" onclick="confirmSave()">Save all ${pendingRows.length} →</button>
-        </div>
-      </div>
-    </div>`;
-}
-
-async function confirmSave() {
-  if (!Auth.isEditor()) return;
-
-  const missingETA = pendingRows.filter(r => !r.eta);
+    const missingETA = pendingRows.filter(r => !r.eta);
   const missingSupplier = pendingRows.filter(r => !r.supplier_id);
   const missingRecipient = pendingRows.filter(r => !r.recipient.trim());
 
@@ -1216,76 +719,259 @@ function closeOverlay(event) {
   }
 }
 
-// --------------------------------------------------
-// EXCEL EXPORT — ALL ACTIVE CONTAINERS
-// --------------------------------------------------
+function getExportGroups() {
+  const groups = new Map();
 
-function doExportExcel() {
-  // Export every active container, not just the currently filtered rows.
+  allContainers.forEach(container => {
+    const supplierName = String(container.suppliers?.name || "Unassigned").trim() || "Unassigned";
+    if (!groups.has(supplierName)) groups.set(supplierName, []);
+    groups.get(supplierName).push(container);
+  });
+
+  return Array.from(groups.entries())
+    .sort((a, b) => a[0].localeCompare(b[0]))
+    .map(([name, containers]) => ({
+      name,
+      containers: containers.slice().sort((a, b) =>
+        String(a.container_number || "").localeCompare(String(b.container_number || ""))
+      )
+    }));
+}
+
+function getExportStatus(container) {
+  return container.status === "ARRIVED" ? "ARRIVED" : "NOT ARRIVED";
+}
+
+function getExportDate(container) {
+  const value = container.eta || container.actual_arrival_at || container.arrived_at || "";
+  if (!value) return "—";
+  const date = new Date(String(value).slice(0, 10) + "T00:00:00");
+  if (Number.isNaN(date.getTime())) return String(value).slice(0, 10);
+  return date.toLocaleDateString("en-GB", {
+    day: "numeric", month: "long", year: "numeric"
+  });
+}
+  async function doExportExcel() {
   if (!allContainers.length) {
     alert("There are no active containers to export.");
     return;
   }
-
-  if (typeof XLSX === "undefined") {
-    alert("The Excel export library could not load. Please check your internet connection and refresh the page.");
+  if (typeof ExcelJS === "undefined") {
+    alert("The Excel export library could not load. Check your internet connection and refresh the page.");
     return;
   }
 
-  const headers = [
-    "Container number",
-    "Supplier",
-    "Recipient",
-    "Shipping line",
-    "Vessel",
-    "ETA",
-    "Status",
-    "Date added",
-    "Packing list filename"
-  ];
+  try {
+    const workbook = new ExcelJS.Workbook();
+    workbook.creator = "CargoVis";
+    workbook.created = new Date();
+    const sheet = workbook.addWorksheet("Active Containers", {
+      views: [{ state: "frozen", ySplit: 4 }],
+      pageSetup: { orientation: "landscape", fitToPage: true, fitToWidth: 1, fitToHeight: 0 }
+    });
 
-  const rows = allContainers.map(c => [
-    String(c.container_number || ""),
-    String(c.suppliers?.name || "Unassigned"),
-    String(c.recipient || ""),
-    String(c.shipping_line || ""),
-    String(c.vessel || ""),
-    c.eta ? String(c.eta).slice(0, 10) : "",
-    c.status === "ARRIVED" ? "Arrived" : "Not arrived",
-    c.created_at ? String(c.created_at).slice(0, 10) : "",
-    String(c.packing_list_filename || "")
-  ]);
+    sheet.columns = [
+      { key: "container", width: 20 },
+      { key: "vessel", width: 30 },
+      { key: "date", width: 22 },
+      { key: "status", width: 18 },
+      { key: "line", width: 20 },
+      { key: "recipient", width: 24 }
+    ];
 
-  const worksheet = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+    sheet.mergeCells("A1:F1");
+    sheet.getCell("A1").value = "CARGOVIS | ACTIVE CONTAINER REPORT";
+    sheet.getCell("A1").font = { name: "Arial", size: 16, bold: true, color: { argb: "FFFFFFFF" } };
+    sheet.getCell("A1").fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF1F3864" } };
+    sheet.getCell("A1").alignment = { vertical: "middle", horizontal: "left" };
+    sheet.getRow(1).height = 30;
 
-  worksheet["!cols"] = [
-    { wch: 20 },
-    { wch: 24 },
-    { wch: 22 },
-    { wch: 18 },
-    { wch: 28 },
-    { wch: 14 },
-    { wch: 16 },
-    { wch: 14 },
-    { wch: 34 }
-  ];
+    sheet.mergeCells("A2:F2");
+    sheet.getCell("A2").value = `Generated: ${new Date().toLocaleString()}  |  Total active containers: ${allContainers.length}`;
+    sheet.getCell("A2").font = { name: "Arial", size: 10, italic: true, color: { argb: "FF555555" } };
+    sheet.getRow(2).height = 21;
+    sheet.addRow([]);
 
-  worksheet["!autofilter"] = {
-    ref: XLSX.utils.encode_range({
-      s: { r: 0, c: 0 },
-      e: { r: rows.length, c: headers.length - 1 }
-    })
-  };
+    const headers = ["Container No.", "Vessel", "ETA / Arrival Date", "Status", "Shipping Line", "Recipient"];
+    const groups = getExportGroups();
 
-  const workbook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook, worksheet, "Active Containers");
+    groups.forEach((group, groupIndex) => {
+      const titleRow = sheet.addRow([`${group.name}  |  ${group.containers.length} container${group.containers.length === 1 ? "" : "s"}`]);
+      sheet.mergeCells(titleRow.number, 1, titleRow.number, 6);
+      titleRow.height = 23;
+      titleRow.getCell(1).font = { name: "Arial", size: 12, bold: true, color: { argb: "FF1F3864" } };
+      titleRow.getCell(1).fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFEAF0F8" } };
+      titleRow.getCell(1).alignment = { vertical: "middle", indent: 1 };
 
-  const today = new Date().toISOString().slice(0, 10);
-  XLSX.writeFile(workbook, `CargoVis_Active_Containers_${today}.xlsx`);
+      const headerRow = sheet.addRow(headers);
+      headerRow.height = 22;
+      headerRow.eachCell(cell => {
+        cell.font = { name: "Arial", size: 10, bold: true, color: { argb: "FFFFFFFF" } };
+        cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF1F3864" } };
+        cell.alignment = { vertical: "middle", horizontal: "center", wrapText: true };
+        cell.border = { top: { style: "thin", color: { argb: "FF9FB3D1" } }, bottom: { style: "thin", color: { argb: "FF9FB3D1" } }, left: { style: "thin", color: { argb: "FF9FB3D1" } }, right: { style: "thin", color: { argb: "FF9FB3D1" } } };
+      });
+
+      group.containers.forEach((container, index) => {
+        const row = sheet.addRow([
+          String(container.container_number || ""),
+          String(container.vessel || ""),
+          getExportDate(container),
+          getExportStatus(container),
+          String(container.shipping_line || ""),
+          String(container.recipient || "")
+        ]);
+        row.height = 20;
+        row.eachCell(cell => {
+          cell.font = { name: "Arial", size: 10, color: { argb: "FF222222" } };
+          cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: index % 2 === 0 ? "FFFFFFFF" : "FFEAF1F8" } };
+          cell.alignment = { vertical: "middle", horizontal: "center", wrapText: true };
+          cell.border = { top: { style: "thin", color: { argb: "FFD5DFEC" } }, bottom: { style: "thin", color: { argb: "FFD5DFEC" } }, left: { style: "thin", color: { argb: "FFD5DFEC" } }, right: { style: "thin", color: { argb: "FFD5DFEC" } } };
+        });
+        const statusCell = row.getCell(4);
+        const arrived = getExportStatus(container) === "ARRIVED";
+        statusCell.font = { name: "Arial", size: 9, bold: true, color: { argb: arrived ? "FF216E2B" : "FFC00000" } };
+        statusCell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: arrived ? "FFE2F0D9" : "FFFCE4D6" } };
+      });
+
+      if (groupIndex < groups.length - 1) sheet.addRow([]);
+    });
+
+    sheet.autoFilter = undefined;
+    const today = new Date().toISOString().slice(0, 10);
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `CargoVis_Active_Containers_${today}.xlsx`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  } catch (error) {
+    console.error("Excel export failed:", error);
+    alert("The Excel report could not be created. Please refresh the page and try again.");
+  }
 }
 
 function doExportPDF() {
-  alert("PDF export coming soon!");
+  if (!allContainers.length) {
+    alert("There are no active containers to export.");
+    return;
+  }
+  if (!window.jspdf || !window.jspdf.jsPDF) {
+    alert("The PDF export library could not load. Check your internet connection and refresh the page.");
+    return;
+  }
+
+  try {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+    const groups = getExportGroups();
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const navy = [31, 56, 100];
+
+    doc.setProperties({
+      title: "CargoVis Active Container Report",
+      subject: "Active ocean container shipments",
+      author: "CargoVis"
+    });
+
+    doc.setFillColor(...navy);
+    doc.rect(0, 0, pageWidth, 25, "F");
+    doc.setTextColor(255, 255, 255);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(16);
+    doc.text("CARGOVIS", 14, 11);
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "normal");
+    doc.text("ACTIVE CONTAINER REPORT", 14, 18);
+    doc.setFontSize(9);
+    doc.text(`Generated: ${new Date().toLocaleDateString("en-GB")}`, pageWidth - 14, 15, { align: "right" });
+
+    let currentY = 34;
+    groups.forEach(group => {
+      const needed = 13 + Math.min(group.containers.length, 2) * 7;
+      if (currentY + needed > pageHeight - 18) {
+        doc.addPage();
+        currentY = 18;
+      }
+
+      doc.setFillColor(234, 240, 248);
+      doc.roundedRect(14, currentY, pageWidth - 28, 9, 1.5, 1.5, "F");
+      doc.setTextColor(...navy);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(11);
+      doc.text(group.name, 18, currentY + 6);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8);
+      doc.text(`Total: ${group.containers.length} container${group.containers.length === 1 ? "" : "s"}`, pageWidth - 18, currentY + 6, { align: "right" });
+      currentY += 10;
+
+      doc.autoTable({
+        startY: currentY,
+        head: [["Container No.", "Vessel", "ETA / Arrival Date", "Status", "Shipping Line", "Recipient"]],
+        body: group.containers.map(container => [
+          String(container.container_number || "—"),
+          String(container.vessel || "—"),
+          getExportDate(container),
+          getExportStatus(container),
+          String(container.shipping_line || "—"),
+          String(container.recipient || "—")
+        ]),
+        theme: "grid",
+        margin: { left: 14, right: 14, bottom: 18 },
+        styles: {
+          font: "helvetica", fontSize: 8, cellPadding: 2.4,
+          textColor: [45, 45, 45], lineColor: [190, 204, 222], lineWidth: 0.15,
+          valign: "middle", overflow: "linebreak"
+        },
+        headStyles: {
+          fillColor: navy, textColor: [255, 255, 255], fontStyle: "bold",
+          halign: "center", minCellHeight: 8
+        },
+        alternateRowStyles: { fillColor: [234, 241, 248] },
+        columnStyles: {
+          0: { cellWidth: 34 }, 1: { cellWidth: 52 }, 2: { cellWidth: 38 },
+          3: { cellWidth: 30, halign: "center" }, 4: { cellWidth: 38 }, 5: { cellWidth: "auto" }
+        },
+        didParseCell: function (data) {
+          if (data.section === "body" && data.column.index === 3) {
+            const arrived = String(data.cell.raw).toUpperCase() === "ARRIVED";
+            data.cell.styles.textColor = arrived ? [33, 110, 43] : [192, 0, 0];
+            data.cell.styles.fillColor = arrived ? [226, 240, 217] : [252, 228, 214];
+            data.cell.styles.fontStyle = "bold";
+          }
+        }
+      });
+
+      currentY = doc.lastAutoTable.finalY + 9;
+    });
+
+    const pageCount = doc.internal.getNumberOfPages();
+    for (let page = 1; page <= pageCount; page++) {
+      doc.setPage(page);
+      if (page > 1) {
+        doc.setFillColor(...navy);
+        doc.rect(0, 0, pageWidth, 8, "F");
+      }
+      doc.setDrawColor(190, 204, 222);
+      doc.line(14, pageHeight - 12, pageWidth - 14, pageHeight - 12);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8);
+      doc.setTextColor(100, 100, 100);
+      doc.text("CargoVis | Active Container Report", 14, pageHeight - 7);
+      doc.text(`Page ${page} of ${pageCount}`, pageWidth - 14, pageHeight - 7, { align: "right" });
+    }
+
+    const today = new Date().toISOString().slice(0, 10);
+    doc.save(`CargoVis_Active_Containers_${today}.pdf`);
+  } catch (error) {
+    console.error("PDF export failed:", error);
+    alert("The PDF report could not be created. Please refresh the page and try again.");
+  }
 }
 </script>
 
